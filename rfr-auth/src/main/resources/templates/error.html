@@ -1,0 +1,32 @@
+<!DOCTYPE HTML>
+<html lang="ru" xmlns:th="https://www.thymeleaf.org" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Error | Rangiffler</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" th:href="@{/images/favicon.ico}"/>
+    <link href="../static/styles/styles.css" th:href="@{/styles/styles.css}" rel="stylesheet"
+          type="text/css"/>
+</head>
+<body>
+<main class="content">
+    <div class="content__wrapper">
+        <div class="main__hero"></div>
+        <section class="main__form">
+            <h1 class="header">
+                <span class="header__accent">R</span>angiffler
+            </h1>
+            <img class="header__logo" src="./../static/images/deer-logo.svg" width="90" th:src="@{/images/deer-logo.svg}"
+                 alt="Rangiffler logo"/>
+            <div class="form">
+                <p class="form__error" th:text="|Error [[${status}]] [[${error}]]|">Unexpected error</p>
+                <p class="form__paragraph" th:if="${message}" th:text="${message}">Something went wrong.</p>
+                <p class="form__paragraph" th:if="${path}" th:text="|Path: [[${path}]]|">Path: /</p>
+                <p class="form__paragraph">
+                    <a class="form__link" th:href="@{|${frontUri}|}">Back to Rangiffler</a>
+                </p>
+            </div>
+        </section>
+    </div>
+</main>
+</body>
+</html>
