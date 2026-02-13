@@ -1,0 +1,37 @@
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
+             version="2.1">
+    <persistence-unit name="jdbc:mysql://localhost:3306/rangiffler-auth" transaction-type="JTA">
+        <jta-data-source>java:comp/env/jdbc/rangiffler-auth</jta-data-source>
+        <class>io.student.rangiffler.data.entity.AuthUserEntity</class>
+        <class>io.student.rangiffler.data.entity.AuthorityEntity</class>
+
+        <properties>
+            <property name="hibernate.transaction.coordinator_class" value="jta"/>
+            <property name="hibernate.transaction.jta.platform"
+                      value="org.hibernate.engine.transaction.jta.platform.internal.AtomikosJtaPlatform"/>
+            <property name="hibernate.connection.handling_mode"
+                      value="DELAYED_ACQUISITION_AND_HOLD"/>
+            <property name="hibernate.dialect"
+                      value="org.hibernate.dialect.MySQLDialect"/>
+        </properties>
+    </persistence-unit>
+
+    <persistence-unit name="jdbc:mysql://localhost:3306/rangiffler-api" transaction-type="JTA">
+        <jta-data-source>java:comp/env/jdbc/rangiffler-api</jta-data-source>
+        <class>io.student.rangiffler.data.entity.UserEntity</class>
+        <class>io.student.rangiffler.data.entity.FriendshipEntity</class>
+        <class>io.student.rangiffler.data.entity.CountryEntity</class>
+        <class>io.student.rangiffler.data.entity.PhotoEntity</class>
+        <properties>
+            <property name="hibernate.transaction.coordinator_class" value="jta"/>
+            <property name="hibernate.transaction.jta.platform"
+                      value="org.hibernate.engine.transaction.jta.platform.internal.AtomikosJtaPlatform"/>
+            <property name="hibernate.connection.handling_mode"
+                      value="DELAYED_ACQUISITION_AND_HOLD"/>
+            <property name="hibernate.dialect"
+                      value="org.hibernate.dialect.MySQLDialect"/>
+        </properties>
+    </persistence-unit>
+</persistence>

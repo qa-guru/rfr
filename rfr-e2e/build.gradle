@@ -24,6 +24,28 @@ dependencies {
 
     testImplementation platform("org.junit:junit-bom:$junitVersion")
     testImplementation "org.junit.jupiter:junit-jupiter"
+
+    testImplementation "org.springframework:spring-jdbc"
+    testImplementation "org.hibernate.orm:hibernate-core"
+    testImplementation "jakarta.persistence:jakarta.persistence-api"
+    testImplementation "com.google.code.findbugs:jsr305:3.0.2"
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    testCompileOnly "org.projectlombok:lombok"
+    testAnnotationProcessor "org.projectlombok:lombok"
+
+    testImplementation "net.datafaker:datafaker:2.4.2"
+    testImplementation "org.apache.commons:commons-lang3"
+
+    testImplementation "org.springframework.security:spring-security-crypto"
+
+    testImplementation "com.atomikos:transactions-jdbc:6.0.0:jakarta"
+    testImplementation "com.atomikos:transactions-jta:6.0.0:jakarta"
+
+    testImplementation "com.codeborne:selenide:7.2.1"
+    testImplementation 'com.github.h-thurow:simple-jndi:0.25.0'
+
+    testImplementation "com.mysql:mysql-connector-j"
 }
 
 allure {
