@@ -13,6 +13,7 @@ public class MapPage {
     private final SelenideElement map = $("figure.worldmap__figure-container");
     private final ElementsCollection sidebarItems = $$(".MuiListItemIcon-root");
     private final SelenideElement sidebarFriends = sidebarItems.get(2);
+    private final SelenideElement sidebarProfile = sidebarItems.get(0);
 
     public MapPage shouldBeVisibleMap() {
         map.shouldBe(visible);
@@ -27,5 +28,10 @@ public class MapPage {
     public FriendsPage clickOnIconFriends() {
         sidebarFriends.click();
         return Selenide.page(FriendsPage.class);
+    }
+
+    public ProfilePage clickOnIconProfile() {
+        sidebarProfile.click();
+        return Selenide.page(ProfilePage.class);
     }
 }

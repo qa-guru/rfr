@@ -15,4 +15,7 @@ import java.lang.annotation.Target;
 public @interface User {
     String username() default "";
     Photo[] photos() default {};
+    int incomeInvitations() default 0;
+    int outcomeInvitations() default 0;
+    int friends() default 0;
 }

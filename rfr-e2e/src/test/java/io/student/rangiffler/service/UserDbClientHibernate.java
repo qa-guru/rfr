@@ -12,9 +12,10 @@ import io.student.rangiffler.model.UserJson;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+
+import static io.student.rangiffler.data.UserData.STANDART_PASSWORD;
+import static io.student.rangiffler.data.UserData.randomUsername;
 
 public class UserDbClientHibernate {
 
@@ -112,6 +113,101 @@ public class UserDbClientHibernate {
                         .toArray(AuthorityEntity[]::new)
         );
         return authUserEntity;
+    }
+
+    public List<UserJson> addIncomeInvitation(UserJson targetUser, int count) {
+        if (count <= 0) return new ArrayList<>();
+
+        return xaAuthApiTemplate.execute(() -> {
+            final List<UserJson> result = new ArrayList<>(count);
+
+            UserEntity targetEntity = userdataUserRepository.findByUsername(targetUser.data().user().username())
+                    .orElseThrow();
+
+            for (int i = 0; i < count; i++) {
+                String username = randomUsername();
+
+                AuthUserEntity authUser = authUserEntity(username, STANDART_PASSWORD);
+                authUserRepository.createUser(authUser);
+
+                UserEntity addressee = userdataUserRepository.create(userEntity(username));
+
+                userdataUserRepository.addIncomeInvitation(targetEntity, addressee);
+
+                result.add(buildUserJson(String.valueOf(addressee.getId()), addressee.getUsername()));
+            }
+
+            return result;
+        });
+    }
+
+    public List<UserJson> addOutcomeInvitation(UserJson targetUser, int count) {
+        if (count <= 0) return new ArrayList<>();
+
+        return xaAuthApiTemplate.execute(() -> {
+            final List<UserJson> result = new ArrayList<>(count);
+
+            UserEntity targetEntity = userdataUserRepository
+                    .findByUsername(targetUser.data().user().username())
+                    .orElseThrow();
+
+            for (int i = 0; i < count; i++) {
+                String username = randomUsername();
+
+                AuthUserEntity authUser = authUserEntity(username, STANDART_PASSWORD);
+                authUserRepository.createUser(authUser);
+
+                UserEntity addressee = userdataUserRepository.create(userEntity(username));
+
+                userdataUserRepository.addOutcomeInvitation(addressee, targetEntity);
+
+                result.add(buildUserJson(addressee.getId().toString(), addressee.getUsername()));
+            }
+
+            return result;
+        });
+    }
+
+    public List<UserJson> addFriend(UserJson targetUser, int count) {
+        if (count <= 0) return new ArrayList<>();
+
+        return xaAuthApiTemplate.execute(() -> {
+            final List<UserJson> result = new ArrayList<>(count);
+
+            UserEntity targetEntity = userdataUserRepository
+                    .findByUsername(targetUser.data().user().username())
+                    .orElseThrow();
+
+            for (int i = 0; i < count; i++) {
+                String username = randomUsername();
+
+                AuthUserEntity authUser = authUserEntity(username, STANDART_PASSWORD);
+                authUserRepository.createUser(authUser);
+
+                UserEntity addressee = userdataUserRepository.create(userEntity(username));
+
+                userdataUserRepository.addFriend(targetEntity, addressee);
+
+                result.add(buildUserJson(addressee.getId().toString(), addressee.getUsername()));
+            }
+
+            return result;
+        });
+    }
+
+    public List<UserEntity> findAll() {
+        return xaTxApiTemplate.execute(userdataUserRepository::findAll);
+    }
+
+    private UserEntity userEntity(String username) {
+        UserEntity ue = new UserEntity();
+        ue.setUsername(username);
+
+        CountryEntity country = new CountryEntity();
+        country.setId(UUID.fromString("11f1070f-a2a0-6785-83d6-0242ac110002"));
+        ue.setCountry(country);
+
+        return ue;
     }
 
     private UserJson buildUserJson(String userId, String userName) {
