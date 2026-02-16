@@ -12,12 +12,15 @@ import io.student.rangiffler.model.UserJson;
 import io.qameta.allure.Step;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import javax.annotation.Nonnull;
+import javax.annotation.ParametersAreNonnullByDefault;
 
 import java.util.*;
 
 import static io.student.rangiffler.data.UserData.STANDART_PASSWORD;
 import static io.student.rangiffler.data.UserData.randomUsername;
 
+@ParametersAreNonnullByDefault
 public class UserDbClientHibernate {
 
     private static final Config CFG = Config.getInstance();
@@ -35,6 +38,7 @@ public class UserDbClientHibernate {
     );
 
     @Step("Создать полного пользователя {username} (auth+userdata)")
+    @Nonnull
     public UserJson createFullUser(String username, String password) {
         return xaAuthApiTemplate.execute(() -> {
             AuthUserEntity authUser = authUserEntity(username, password);
@@ -54,6 +58,7 @@ public class UserDbClientHibernate {
     }
 
     @Step("Найти пользователя по id {id}")
+    @Nonnull
     public Optional<UserEntity> findById(UUID id) {
         return xaTxApiTemplate.execute(() ->
                 userdataUserRepository.findById(id)
@@ -61,6 +66,7 @@ public class UserDbClientHibernate {
     }
 
     @Step("Создать пользователя {userName} (Repository Hibernate)")
+    @Nonnull
     public UserJson createUserRepositoryHibernate(String userName, String password) {
         AuthUserEntity newUser = xaTransactionTemplate.execute(() -> {
             {
@@ -72,6 +78,7 @@ public class UserDbClientHibernate {
     }
 
     @Step("Создать пользователя в userdata")
+    @Nonnull
     public UserEntity createUserdataUser(UserEntity user) {
         return xaTxApiTemplate.execute(() -> {
             userdataUserRepository.create(user);
@@ -103,6 +110,7 @@ public class UserDbClientHibernate {
         });
     }
 
+    @Nonnull
     private AuthUserEntity authUserEntity(String userName, String password) {
         AuthUserEntity authUserEntity = new AuthUserEntity();
         authUserEntity.setUsername(userName);
@@ -124,6 +132,7 @@ public class UserDbClientHibernate {
     }
 
     @Step("Добавить входящие приглашения ({count}) для пользователя {targetUser}")
+    @Nonnull
     public List<UserJson> addIncomeInvitation(UserJson targetUser, int count) {
         if (count <= 0) return new ArrayList<>();
 
@@ -151,6 +160,7 @@ public class UserDbClientHibernate {
     }
 
     @Step("Добавить исходящие приглашения ({count}) для пользователя {targetUser}")
+    @Nonnull
     public List<UserJson> addOutcomeInvitation(UserJson targetUser, int count) {
         if (count <= 0) return new ArrayList<>();
 
@@ -179,6 +189,7 @@ public class UserDbClientHibernate {
     }
 
     @Step("Добавить друзей ({count}) пользователю {targetUser}")
+    @Nonnull
     public List<UserJson> addFriend(UserJson targetUser, int count) {
         if (count <= 0) return new ArrayList<>();
 
@@ -207,10 +218,12 @@ public class UserDbClientHibernate {
     }
 
     @Step("Получить всех пользователей userdata")
+    @Nonnull
     public List<UserEntity> findAll() {
         return xaTxApiTemplate.execute(userdataUserRepository::findAll);
     }
 
+    @Nonnull
     private UserEntity userEntity(String username) {
         UserEntity ue = new UserEntity();
         ue.setUsername(username);
@@ -222,6 +235,7 @@ public class UserDbClientHibernate {
         return ue;
     }
 
+    @Nonnull
     private UserJson buildUserJson(String userId, String userName) {
         return new UserJson(
                 new UserJson.Data(
