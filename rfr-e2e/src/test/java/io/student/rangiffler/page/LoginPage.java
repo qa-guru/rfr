@@ -2,6 +2,7 @@ package io.student.rangiffler.page;
 
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
+import io.qameta.allure.Step;
 
 import static com.codeborne.selenide.Selenide.$;
 
@@ -11,6 +12,7 @@ public class LoginPage {
     private final SelenideElement passwordInput = $("[name='password']");
     private final SelenideElement submitBtn = $("[type='submit']");
 
+    @Step("Выполнить логин пользователем {username}")
     public MapPage login(String username, String password) {
         usernameInput.setValue(username);
         passwordInput.setValue(password);

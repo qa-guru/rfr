@@ -10,6 +10,7 @@ import io.student.rangiffler.data.repository.impl.UserdataUserRepositoryJdbc;
 import io.student.rangiffler.data.tpl.JdbcTransactionTemplate;
 import io.student.rangiffler.model.TestData;
 import io.student.rangiffler.model.UserJson;
+import io.qameta.allure.Step;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,12 +31,14 @@ public class UserDbClientRepository {
 
 
 
+    @Step("Получить список всех пользователей")
     public List<UserJson> findAllUsers() {
         return authUserRepository.findAll().stream()
                 .map(x -> buildUserJson(x.getId().toString(), x.getUsername()))
                 .toList();
     }
 
+    @Step("Создать пользователя {userName} (Repository JDBC)")
     public UserJson createUserRepositoryJdbc(String userName, String password) {
         AuthUserEntity newUser = jdbcTxTemplate.execute(
                 ()-> {
@@ -64,6 +67,7 @@ public class UserDbClientRepository {
         return buildUserJson(newUser.getId().toString(), newUser.getUsername());
     }
 
+    @Step("Добавить исходящее приглашение в друзья")
     public void addOutcomeInvitation(UserEntity requester, UserEntity addressee) {
         jdbcTxApiTemplate.execute(() -> {
             userdataUserRepository.addOutcomeInvitation(requester, addressee);
@@ -71,6 +75,7 @@ public class UserDbClientRepository {
         });
     }
 
+    @Step("Добавить входящее приглашение в друзья")
     public void addIncomeInvitation(UserEntity requester, UserEntity addressee) {
         jdbcTxApiTemplate.execute(() -> {
             userdataUserRepository.addIncomeInvitation(requester, addressee);
@@ -78,6 +83,7 @@ public class UserDbClientRepository {
         });
     }
 
+    @Step("Добавить пользователя в друзья")
     public void addFriend(UserEntity requester, UserEntity addressee) {
         jdbcTxApiTemplate.execute(() -> {
             userdataUserRepository.addFriend(requester, addressee);
@@ -85,25 +91,30 @@ public class UserDbClientRepository {
         });
     }
 
+    @Step("Найти пользователя по id {id}")
     public Optional<UserEntity> findById(UUID id) {
         return jdbcTxApiTemplate.execute(() -> userdataUserRepository.findById(id));
     }
 
+    @Step("Получить пользователя по id {id}")
     public UserEntity getById(UUID id) {
         return findById(id)
                 .orElseThrow(() -> new IllegalStateException("User not found: id=" + id));
     }
 
+    @Step("Создать пользователя в userdata")
     public UserEntity create(UserEntity user) {
         return jdbcTxApiTemplate.execute(() -> userdataUserRepository.create(user));
     }
 
+    @Step("Получить список всех пользователей (Repository SpringJdbc)")
     public List<UserJson> findAllUsersSpringJdbc() {
         return authUserRepositorySpringJdbc.findAll().stream()
                 .map(x -> buildUserJson(x.getId().toString(), x.getUsername()))
                 .toList();
     }
 
+    @Step("Создать пользователя {userName} (Repository SpringJdbc)")
     public UserJson createUserRepositorySpringJdbc(String userName, String password) {
         AuthUserEntity newUser = jdbcTxTemplate.execute(() -> {
             AuthUserEntity authUserEntity = new AuthUserEntity();
@@ -131,6 +142,7 @@ public class UserDbClientRepository {
         return buildUserJson(newUser.getId().toString(), newUser.getUsername());
     }
 
+    @Step("Найти пользователя по username {username} (Repository SpringJdbc)")
     public Optional<UserJson> findUserJsonByUsernameSpringJdbc(String username) {
         return jdbcTxTemplate.execute(() ->
                 authUserRepositorySpringJdbc.findByUsername(username)
@@ -138,6 +150,7 @@ public class UserDbClientRepository {
         );
     }
 
+    @Step("Удалить пользователя по username {userName} (Repository SpringJdbc)")
     public void deleteUserByUsernameSpringJdbc(String userName) {
         jdbcTxTemplate.execute(() -> {
             authUserRepositorySpringJdbc.deleteUserByUserName(userName);
@@ -145,6 +158,7 @@ public class UserDbClientRepository {
         });
     }
 
+    @Step("Найти пользователя по username {username} (Repository JDBC)")
     public Optional<UserJson> findUserJsonByUsernameJdbc(String username) {
         return jdbcTxTemplate.execute(() ->
                 authUserRepository.findByUsername(username)
@@ -152,6 +166,7 @@ public class UserDbClientRepository {
         );
     }
 
+    @Step("Удалить пользователя по username {userName} (Repository JDBC)")
     public void deleteUserByUsernameJdbc(String userName) {
         jdbcTxTemplate.execute(() -> {
             authUserRepository.deleteUserByUserName(userName);

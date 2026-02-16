@@ -9,6 +9,7 @@ import io.student.rangiffler.data.repository.impl.UserdataUserRepositoryHibernat
 import io.student.rangiffler.data.tpl.XaTransactionTemplate;
 import io.student.rangiffler.model.TestData;
 import io.student.rangiffler.model.UserJson;
+import io.qameta.allure.Step;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -33,6 +34,7 @@ public class UserDbClientHibernate {
             CFG.apiJdbcUrl()
     );
 
+    @Step("Создать полного пользователя {username} (auth+userdata)")
     public UserJson createFullUser(String username, String password) {
         return xaAuthApiTemplate.execute(() -> {
             AuthUserEntity authUser = authUserEntity(username, password);
@@ -51,12 +53,14 @@ public class UserDbClientHibernate {
         });
     }
 
+    @Step("Найти пользователя по id {id}")
     public Optional<UserEntity> findById(UUID id) {
         return xaTxApiTemplate.execute(() ->
                 userdataUserRepository.findById(id)
         );
     }
 
+    @Step("Создать пользователя {userName} (Repository Hibernate)")
     public UserJson createUserRepositoryHibernate(String userName, String password) {
         AuthUserEntity newUser = xaTransactionTemplate.execute(() -> {
             {
@@ -67,6 +71,7 @@ public class UserDbClientHibernate {
         return buildUserJson(String.valueOf(newUser.getId()),newUser.getUsername());
     }
 
+    @Step("Создать пользователя в userdata")
     public UserEntity createUserdataUser(UserEntity user) {
         return xaTxApiTemplate.execute(() -> {
             userdataUserRepository.create(user);
@@ -74,6 +79,7 @@ public class UserDbClientHibernate {
         });
     }
 
+    @Step("Добавить исходящее приглашение в друзья")
     public void addOutcomeInvitation(UserEntity requester, UserEntity addressee) {
         xaTxApiTemplate.execute(() -> {
             userdataUserRepository.addOutcomeInvitation(requester, addressee);
@@ -81,6 +87,7 @@ public class UserDbClientHibernate {
         });
     }
 
+    @Step("Добавить входящее приглашение в друзья")
     public void addIncomeInvitation(UserEntity requester, UserEntity addressee) {
         xaTxApiTemplate.execute(() -> {
             userdataUserRepository.addIncomeInvitation(requester, addressee);
@@ -88,6 +95,7 @@ public class UserDbClientHibernate {
         });
     }
 
+    @Step("Добавить пользователя в друзья")
     public void addFriend(UserEntity requester, UserEntity addressee) {
         xaTxApiTemplate.execute(() -> {
             userdataUserRepository.addFriend(requester, addressee);
@@ -115,6 +123,7 @@ public class UserDbClientHibernate {
         return authUserEntity;
     }
 
+    @Step("Добавить входящие приглашения ({count}) для пользователя {targetUser}")
     public List<UserJson> addIncomeInvitation(UserJson targetUser, int count) {
         if (count <= 0) return new ArrayList<>();
 
@@ -141,6 +150,7 @@ public class UserDbClientHibernate {
         });
     }
 
+    @Step("Добавить исходящие приглашения ({count}) для пользователя {targetUser}")
     public List<UserJson> addOutcomeInvitation(UserJson targetUser, int count) {
         if (count <= 0) return new ArrayList<>();
 
@@ -168,6 +178,7 @@ public class UserDbClientHibernate {
         });
     }
 
+    @Step("Добавить друзей ({count}) пользователю {targetUser}")
     public List<UserJson> addFriend(UserJson targetUser, int count) {
         if (count <= 0) return new ArrayList<>();
 
@@ -195,6 +206,7 @@ public class UserDbClientHibernate {
         });
     }
 
+    @Step("Получить всех пользователей userdata")
     public List<UserEntity> findAll() {
         return xaTxApiTemplate.execute(userdataUserRepository::findAll);
     }

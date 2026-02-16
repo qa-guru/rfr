@@ -3,6 +3,7 @@ package io.student.rangiffler.page;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
+import io.qameta.allure.Step;
 
 import static com.codeborne.selenide.Condition.text;
 import static com.codeborne.selenide.Selectors.byText;
@@ -20,6 +21,7 @@ public class RegisterPage {
     private final SelenideElement labelPasswordForm = labelForms.find(text("Password"));
 
 
+    @Step("Зарегистрировать пользователя {userName}")
     public RegisterPage registerUser(String userName, String password, String passwordSubmit) {
         usernameInput.sendKeys(userName);
         passwordInput.sendKeys(password);
@@ -28,21 +30,25 @@ public class RegisterPage {
         return this;
     }
 
+    @Step("Перейти на страницу выбора авторизации после успешной регистрации")
     public AuthChoicePage successRegisterBtnClick() {
         successRegisterBtn.click();
         return Selenide.page(AuthChoicePage.class);
     }
 
+    @Step("Проверить успешную регистрацию")
     public RegisterPage checkRegistrationResult() {
         resultRegistrationForm.shouldHave(text(RegistrationResult.SUCCESS.getText()));
         return this;
     }
 
+    @Step("Проверить отсутствие сообщения об успешной регистрации")
     public RegisterPage checkRegistrationResultNotSuccessMessage() {
         resultRegistrationForm.shouldNotHave(text(RegistrationResult.SUCCESS.getText()));
         return this;
     }
 
+    @Step("Проверить сообщение об ошибке регистрации: {registrationResult}")
     public RegisterPage checkRegistrationFail(RegistrationResult registrationResult) {
         labelPasswordForm.shouldHave(text(registrationResult.getText()));
         return this;

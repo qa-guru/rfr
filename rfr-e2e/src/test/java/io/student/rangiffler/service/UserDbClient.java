@@ -15,6 +15,7 @@ import io.student.rangiffler.data.tpl.JdbcTransactionTemplate;
 import io.student.rangiffler.data.tpl.XaTransactionTemplate;
 import io.student.rangiffler.model.TestData;
 import io.student.rangiffler.model.UserJson;
+import io.qameta.allure.Step;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,6 +36,7 @@ public class UserDbClient {
     private final XaTransactionTemplate xaTransactionTemplate = new XaTransactionTemplate(CFG.authJdbcUrl());
 
 
+    @Step("Удалить пользователя по username {username}")
     public void deleteUserByUsername(String username) {
         xaTransactionTemplate.execute(() -> {
             authorityDao.deleteAuthorityByUserName(username);
@@ -43,26 +45,31 @@ public class UserDbClient {
         });
     }
 
+    @Step("Получить список всех пользователей")
     public List<UserJson> findAllUsers() {
         return userDaoSpringJdbc.findAll().stream()
                 .map(x -> buildUserJson(x.getId().toString(), x.getUsername()))
                 .toList();
     }
 
+    @Step("Получить список всех пользователей (SpringJdbc)")
     public List<UserJson> findAllUsersSpringJdbc() {
         return userDao.findAll().stream()
                 .map(x -> buildUserJson(x.getId().toString(), x.getUsername()))
                 .toList();
     }
 
+    @Step("Получить все роли/права")
     public List<AuthorityEntity> findAllAuthority() {
         return authorityDao.findAll();
     }
 
+    @Step("Получить все роли/права (SpringJdbc)")
     public List<AuthorityEntity> findAllAuthoritySpringJdbc() {
         return authorityDaoSpringJdbc.findAll();
     }
 
+    @Step("Создать пользователя {userName}")
     public UserJson createUser(String userName, String password) {
         AuthUserEntity newUser = xaTransactionTemplate.execute(
                         ()-> {
@@ -92,6 +99,7 @@ public class UserDbClient {
         return buildUserJson(newUser.getId().toString(), newUser.getUsername());
     }
 
+    @Step("Удалить пользователя по username {username} (SpringJdbc)")
     public void deleteUserByUsernameSpringJdbc(String username) {
         jdbcTxTemplate.execute(() -> {
             authorityDaoSpringJdbc.deleteAuthorityByUserName(username);
@@ -100,6 +108,7 @@ public class UserDbClient {
         });
     }
 
+    @Step("Создать пользователя {userName} (SpringJdbc)")
     public UserJson createUserSpringJdbc(String userName, String password) {
         AuthUserEntity newUser = jdbcTxTemplate.execute(
                 ()-> {
