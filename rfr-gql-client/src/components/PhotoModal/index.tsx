@@ -155,7 +155,7 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
                                         width={300}
                                         height={300}
                                         src={formValues.src.value}
-                                        alt={formValues.description.value ?? "Фото пользователя"}
+                                        alt={formValues.description.value ?? "User photo"}
                                     />
                                 </div>
                             :

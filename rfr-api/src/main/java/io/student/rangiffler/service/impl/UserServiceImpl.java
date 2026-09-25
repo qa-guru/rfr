@@ -49,7 +49,7 @@ public class UserServiceImpl implements UserService {
           UserEntity newUser = new UserEntity();
           newUser.setUsername(username);
           newUser.setCountry(countryRepository.findByCode("ru").orElseThrow(() -> new ResourceNotFoundException(
-              "Страна не найден по коду: ru"
+              "Country not found by code: ru"
           )));
           return userRepository.save(newUser);
         });
@@ -120,7 +120,7 @@ public class UserServiceImpl implements UserService {
     if (input.getLocation() != null) {
       CountryEntity country = countryRepository.findByCode(input.getLocation().getCode())
           .orElseThrow(() -> new ResourceNotFoundException(
-              String.format("Страна не найдена по коду: %s", input.getLocation().getCode())));
+              String.format("Country not found by code: %s", input.getLocation().getCode())));
       userEntity.setCountry(country);
     }
 
@@ -253,7 +253,7 @@ public class UserServiceImpl implements UserService {
   private UserEntity getRequiredUser(String username) {
     return userRepository.findByUsername(username)
         .orElseThrow(() -> new ResourceNotFoundException(
-            String.format("Пользователь не найден по username: %s", username)
+            String.format("User not found by username: %s", username)
         ));
   }
 
@@ -285,7 +285,7 @@ public class UserServiceImpl implements UserService {
   private UserEntity getRequiredUser(UUID userId) {
     return userRepository.findById(userId)
         .orElseThrow(() -> new ResourceNotFoundException(
-            String.format("Пользователь не найден по id: %s", userId)
+            String.format("User not found by id: %s", userId)
         ));
   }
 }

@@ -16,7 +16,7 @@ export const AuthorizedPage = () => {
                 navigate("/", {replace: true});
             }, 500);
         } else {
-            console.log("Не удалось получить токен");
+            console.log("Failed to get token");
             navigate("/");
         }
     };

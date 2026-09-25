@@ -39,7 +39,7 @@ public class PhotoMockMutationController {
     Optional<Photo> existing = Optional.ofNullable(input.getId()).flatMap(feedMockData::findPhoto);
     if (input.getLike() != null) {
       Photo photo = existing.orElseThrow(() -> new ResourceNotFoundException(
-          String.format("Фото не найдено по id: %s", input.getId())));
+          String.format("Photo not found by id: %s", input.getId())));
       List<Like> likes = new ArrayList<>(Objects.requireNonNullElse(photo.getLikes().getLikes(), List.of()));
       likes.add(Like.newBuilder()
           .user(input.getLike().getUser())

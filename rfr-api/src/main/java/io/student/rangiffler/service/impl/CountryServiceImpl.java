@@ -37,7 +37,7 @@ public class CountryServiceImpl implements CountryService {
     return countryRepository.findByCode(code)
         .map(this::toCountryGql)
         .orElseThrow(() -> new ResourceNotFoundException(
-            String.format("Страна не найдена по коду: %s", code)));
+            String.format("Country not found by code: %s", code)));
   }
 
   private Country toCountryGql(CountryEntity entity) {
