@@ -1,7 +1,7 @@
 import {Box, Button, Grid, Typography} from "@mui/material";
 import deerLogo from "./../../assets/deer-logo.svg";
 import "./styles.css";
-import {Navigate} from "react-router-dom";
+import {Navigate} from "react-router";
 import {initLocalStorageAndRedirectToAuth} from "../../api/authUtils";
 import {Loader} from "../../components/Loader";
 import {useGetUser} from "../../hooks/useGetUser";
@@ -25,17 +25,10 @@ export const LandingPage = () => {
                             container
                             spacing={0}
                             className="landing__container"
-                            width={"70%"}>
-                            <Grid
-                                item
-                                xs={6}
-                                sx={{
-                                    maxWidth: "100%",
-                                    width: "100%",
-                                }}
-                                className="landing__hero">
+                            sx={{width: "70%"}}>
+                            <Grid size={6} className="landing__hero">
                             </Grid>
-                            <Grid item xs={6} className="landing__content">
+                            <Grid size={6} className="landing__content">
                                 <Typography
                                     variant="h3"
                                     component="h2"

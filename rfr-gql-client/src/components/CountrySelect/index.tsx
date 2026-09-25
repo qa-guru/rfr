@@ -6,18 +6,7 @@ import FormControl from '@mui/material/FormControl';
 import Select, {SelectChangeEvent} from '@mui/material/Select';
 import {Box, Chip, IconButton} from '@mui/material';
 import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
-
-
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-export const MenuProps = {
-    PaperProps: {
-        style: {
-            maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-            width: 250,
-        },
-    },
-};
+import {MenuProps} from './menuProps';
 
 const names = [
     'Russia',

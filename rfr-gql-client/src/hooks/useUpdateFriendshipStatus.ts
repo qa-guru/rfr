@@ -1,4 +1,5 @@
-import {ApolloError, gql, useApolloClient, useMutation} from "@apollo/client";
+import {ErrorLike, gql} from "@apollo/client";
+import {useApolloClient, useMutation} from "@apollo/client/react";
 
 interface FriendshipInput {
     variables: {
@@ -8,7 +9,7 @@ interface FriendshipInput {
         }
     },
     onCompleted?: () => void,
-    onError?: (error: ApolloError) => void,
+    onError?: (error: ErrorLike) => void,
 }
 
 const FRIENDSHIP_ACTION = gql(`

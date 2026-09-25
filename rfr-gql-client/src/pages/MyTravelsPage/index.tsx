@@ -4,7 +4,7 @@ import {WorldMap} from "../../components/WorldMap";
 import {Toggle} from "../../components/Toggle";
 import {useState} from "react";
 import {useGetFeed} from "../../hooks/useGetFeed";
-import {useDialog} from "../../context/DialogContext.tsx";
+import {useDialog} from "../../context/useDialog.ts";
 import {formInitialState} from "../../components/PhotoModal/formValidate.ts";
 import {QueryErrorAlert} from "../../components/QueryErrorAlert";
 

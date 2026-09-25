@@ -1,10 +1,10 @@
-import {ApolloError} from "@apollo/client";
+import {ErrorLike} from "@apollo/client";
 import {Alert, Button} from "@mui/material";
 import {FC} from "react";
 import {errorMessage} from "../../api/graphqlError";
 
 interface QueryErrorAlertInterface {
-    error?: ApolloError;
+    error?: ErrorLike;
     fallback?: string;
     onRetry?: () => void;
 }

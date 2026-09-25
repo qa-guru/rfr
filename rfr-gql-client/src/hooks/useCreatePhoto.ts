@@ -1,4 +1,5 @@
-import {ApolloError, gql, useMutation} from "@apollo/client";
+import {ErrorLike, gql} from "@apollo/client";
+import {useMutation} from "@apollo/client/react";
 import {GET_FEED} from "./useGetFeed.ts";
 
 interface PhotoInput {
@@ -33,7 +34,7 @@ const CREATE_PHOTO = gql(`
 
 type CreatePhotoRequestType = {
     withFriends: boolean,
-    onError: (error: ApolloError) => void,
+    onError: (error: ErrorLike) => void,
     onCompleted: () => void,
 }
 

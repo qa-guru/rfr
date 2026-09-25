@@ -11,14 +11,14 @@ import {
     TextField,
     Typography
 } from "@mui/material"
-import {useCountries} from "../../context/CountriesContext";
-import {MenuProps} from "../CountrySelect";
+import {useCountries} from "../../context/useCountries";
+import {MenuProps} from "../CountrySelect/menuProps";
 import {ChangeEvent, FormEvent, useContext, useState} from "react";
 import {ImageUpload} from "../ImageUpload";
 import {formInitialState, formValidate, UserFormProps} from "./formValidate";
 import {formHasErrors} from "../PhotoModal/formValidate";
 import {useUpdateUser} from "../../hooks/useUpdateUser";
-import {useSnackBar} from "../../context/SnackBarContext";
+import {useSnackBar} from "../../context/useSnackBar";
 import {SessionContext} from "../../context/SessionContext";
 import {errorMessage} from "../../api/graphqlError";
 
@@ -43,7 +43,8 @@ export const ProfileForm = () => {
     const [formValues, setFormValues] = useState<UserFormProps>(getInitialState());
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const {name, value} = event.target;
+        const {value} = event.target;
+        const name = event.target.name as keyof UserFormProps;
         setFormValues({
             ...formValues,
             [name]: {
@@ -54,7 +55,8 @@ export const ProfileForm = () => {
     };
 
     const handleSelectValueChange = (event: SelectChangeEvent<string>) => {
-        const {name, value} = event.target;
+        const {value} = event.target;
+        const name = event.target.name as keyof UserFormProps;
         setFormValues({
             ...formValues,
             [name]: {
@@ -98,7 +100,7 @@ export const ProfileForm = () => {
                 marginTop: 5,
             }}
         >
-            <Grid item xs={4} sx={{
+            <Grid size={4} sx={{
                 display: "flex",
                 justifyContent: "center",
             }}>
@@ -117,7 +119,7 @@ export const ProfileForm = () => {
                         })
                     }}/>
             </Grid>
-            <Grid item xs={8}>
+            <Grid size={8}>
                 <Typography
                     variant="h4"
                     component="h2"
@@ -131,7 +133,7 @@ export const ProfileForm = () => {
                     container
                     spacing={3}
                 >
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                         <TextField
                             id="firstname"
                             name="firstname"
@@ -144,7 +146,7 @@ export const ProfileForm = () => {
                             fullWidth
                         />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                         <TextField
                             id="surname"
                             name="surname"
@@ -157,7 +159,7 @@ export const ProfileForm = () => {
                             fullWidth
                         />
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                         <TextField
                             id="username"
                             name="username"
@@ -170,7 +172,7 @@ export const ProfileForm = () => {
                             fullWidth
                         />
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                         <FormControl sx={{width: "100%"}}>
                             <InputLabel id="select-location-label">Location</InputLabel>
                             <Select
@@ -196,7 +198,7 @@ export const ProfileForm = () => {
                             </Select>
                         </FormControl>
                     </Grid>
-                    <Grid item xs={12} sx={{
+                    <Grid size={12} sx={{
                         margin: "0 auto",
                     }}>
                         <Box sx={{

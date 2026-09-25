@@ -1,13 +1,11 @@
 import * as React from 'react';
 import {
     ChangeEvent,
-    createContext,
     FC,
     FormEvent,
     forwardRef,
     ReactElement,
     ReactNode,
-    useContext,
     useState
 } from 'react';
 import DialogMui from "@mui/material/Dialog";
@@ -35,10 +33,11 @@ import {
     PhotoFormField,
     PhotoFormProps
 } from "../components/PhotoModal/formValidate.ts";
-import {MenuProps} from "../components/CountrySelect";
-import {useCountries} from "./CountriesContext.tsx";
+import {MenuProps} from "../components/CountrySelect/menuProps.ts";
+import {useCountries} from "./useCountries.ts";
 import {useCreatePhoto} from "../hooks/useCreatePhoto.ts";
-import {useSnackBar} from "./SnackBarContext.tsx";
+import {useSnackBar} from "./useSnackBar.ts";
+import {DialogContext, DialogDataInterface} from "./useDialog.ts";
 import {useUpdatePhoto} from "../hooks/useUpdatePhoto.ts";
 import {errorMessage} from "../api/graphqlError.ts";
 
@@ -50,19 +49,6 @@ const Transition = forwardRef(function Transition(
 ) {
     return <Slide direction="up" ref={ref} {...props} />;
 });
-
-interface DialogDataInterface {
-    title: string,
-    formData: PhotoFormProps,
-    isEdit: boolean,
-    withFriends: boolean,
-}
-
-interface DialogContextActions {
-    showDialog: (dialogData: DialogDataInterface) => void;
-}
-
-const DialogContext = createContext({} as DialogContextActions);
 
 interface DialogContextProps {
     children: ReactNode;
@@ -169,7 +155,7 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
             {children}
             <DialogMui
                 open={open}
-                TransitionComponent={Transition}
+                slots={{transition: Transition}}
                 keepMounted
                 onClose={handleClose}
                 aria-describedby="alert-dialog-slide-description"
@@ -178,7 +164,7 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
                 <DialogContent sx={{display: "flex", alignItems: "center"}}>
                     <Grid container spacing={2} component="form" noValidate
                           onSubmit={dialogData?.isEdit ? handleUpdate : handleCreate}>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <ImageUpload
                                 buttonText="Upload new image"
                                 file={formValues.src.value}
@@ -193,7 +179,7 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
                                     })
                                 }}/>
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <FormControl sx={{width: "100%"}}>
                                 <InputLabel id="select-country-label">Country</InputLabel>
                                 <Select
@@ -219,7 +205,7 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
                                 </Select>
                             </FormControl>
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <TextField
                                 id="description"
                                 name="description"
@@ -253,14 +239,4 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
     );
 };
 
-const useDialog = (): DialogContextActions => {
-    const context = useContext(DialogContext);
-
-    if (!context) {
-        throw new Error('useDialog must be used within an DialogProvider');
-    }
-
-    return context;
-};
-
-export {DialogProvider, useDialog};
+export {DialogProvider};

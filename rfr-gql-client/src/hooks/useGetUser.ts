@@ -1,4 +1,10 @@
-import {gql, useQuery} from "@apollo/client";
+import {gql} from "@apollo/client";
+import {useQuery} from "@apollo/client/react";
+import {User} from "../types/User";
+
+type GetUserData = {
+    user: User;
+};
 
 export const GET_USER = gql(`
     query GetUser {
@@ -17,7 +23,7 @@ export const GET_USER = gql(`
 `);
 
 export const useGetUser = () => {
-    const {data, loading, error, refetch} = useQuery(GET_USER);
+    const {data, loading, error, refetch} = useQuery<GetUserData>(GET_USER);
     return {
         data,
         loading,

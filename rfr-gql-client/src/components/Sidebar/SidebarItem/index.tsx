@@ -1,6 +1,6 @@
 import {ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme} from "@mui/material"
 import {FC, ReactNode} from "react";
-import {Link} from 'react-router-dom';
+import {Link} from 'react-router';
 
 interface SidebarItemProps {
     name: string,

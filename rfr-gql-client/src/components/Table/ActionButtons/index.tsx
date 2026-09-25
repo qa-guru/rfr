@@ -1,5 +1,5 @@
 import {FC} from "react";
-import {useSnackBar} from "../../../context/SnackBarContext";
+import {useSnackBar} from "../../../context/useSnackBar";
 import {useUpdateFriendshipStatus} from "../../../hooks/useUpdateFriendshipStatus";
 import {Button, Chip} from "@mui/material";
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';

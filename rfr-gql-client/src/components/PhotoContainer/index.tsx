@@ -5,7 +5,7 @@ import {PhotoCard} from "../PhotoCard";
 import {Photo} from "../../types/Photo";
 import {Box, Button} from "@mui/material";
 import {Loader} from "../Loader";
-import {useDialog} from "../../context/DialogContext.tsx";
+import {useDialog} from "../../context/useDialog.ts";
 import {formInitialState} from "../PhotoModal/formValidate.ts";
 
 interface PhotoContainerInterface {
@@ -68,7 +68,7 @@ export const PhotoContainer: FC<PhotoContainerInterface> = ({
                 <>
                     <Grid container spacing={3}>
                         {data.map((item: Photo) => (
-                            <Grid item key={item.id} xs={3}>
+                            <Grid key={item.id} size={3}>
                                 <PhotoCard
                                     photo={item}
                                     onEditClick={() => handleSelectImage(item)}

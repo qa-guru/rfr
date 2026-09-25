@@ -1,11 +1,6 @@
 import {Alert, Snackbar} from '@mui/material';
-import {createContext, FC, ReactNode, useContext, useState} from 'react';
-
-type SnackBarContextActions = {
-    showSnackBar: (text: string, typeColor: "error" | "success" | "info") => void;
-};
-
-const SnackBarContext = createContext({} as SnackBarContextActions);
+import {FC, ReactNode, useState} from 'react';
+import {SnackBarContext} from './useSnackBar';
 
 interface SnackBarContextProviderProps {
     children: ReactNode;
@@ -42,14 +37,4 @@ const SnackBarProvider: FC<SnackBarContextProviderProps> = ({children}) => {
     );
 };
 
-const useSnackBar = (): SnackBarContextActions => {
-    const context = useContext(SnackBarContext);
-
-    if (!context) {
-        throw new Error('useSnackBar must be used within an SnackBarProvider');
-    }
-
-    return context;
-};
-
-export {SnackBarProvider, useSnackBar};
+export {SnackBarProvider};

@@ -3,9 +3,6 @@ export const MAX_PHOTO_DESCRIPTION_ERROR = "Description length has to be not lon
 export const EMPTY_SRC_ERROR = "Please upload an image";
 export const EMPTY_COUNTRY_ERROR = "You have to select country";
 
-export interface IStringIndex extends Record<string, any> {
-};
-
 export type PhotoFormProps = {
     description: {
         value: string,
@@ -58,20 +55,18 @@ export const formValidate = (formValues: PhotoFormProps): PhotoFormProps => {
         },
         src: {
             ...newFormValues.src,
-            error: !Boolean(formValues.src.value) ? true : false,
-            errorMessage: !Boolean(formValues.src.value) ? EMPTY_SRC_ERROR : "",
+            error: !formValues.src.value ? true : false,
+            errorMessage: !formValues.src.value ? EMPTY_SRC_ERROR : "",
         },
         country: {
             ...newFormValues.country,
-            error: !Boolean(formValues.country.value) ? true : false,
-            errorMessage: !Boolean(formValues.country.value) ? EMPTY_COUNTRY_ERROR : "",
+            error: !formValues.country.value ? true : false,
+            errorMessage: !formValues.country.value ? EMPTY_COUNTRY_ERROR : "",
         }
     }
 
     return newFormValues;
 };
 
-export const formHasErrors = (formValues: Record<string, any>) => {
-    const keys = Object.keys(formValues);
-    return keys.some((key) => formValues[key].error === true);
-};
+export const formHasErrors = (formValues: object): boolean =>
+    Object.values(formValues).some((field) => typeof field === "object" && field !== null && "error" in field && field.error === true);

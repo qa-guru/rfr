@@ -1,4 +1,15 @@
-import {gql, useQuery} from "@apollo/client";
+import {gql} from "@apollo/client";
+import {useQuery} from "@apollo/client/react";
+import {Connection} from "../types/Connection";
+import {Photo} from "../types/Photo";
+import {Stat} from "../types/Stat";
+
+type GetFeedData = {
+    feed: {
+        photos: Connection<Photo>;
+        stat: Stat[];
+    };
+};
 
 export const GET_FEED = gql(`
     query GetFeed($page: Int, $size: Int, $withFriends: Boolean!) {
@@ -43,7 +54,7 @@ type getFeedRequestType = {
     withFriends: boolean,
 }
 export const useGetFeed = (req: getFeedRequestType) => {
-    const {data, loading, error, refetch, fetchMore} = useQuery(GET_FEED, {
+    const {data, loading, error, refetch, fetchMore} = useQuery<GetFeedData>(GET_FEED, {
         variables: {
             withFriends: req.withFriends,
             page: req.page ?? 0,
@@ -52,10 +63,10 @@ export const useGetFeed = (req: getFeedRequestType) => {
         fetchPolicy: "cache-and-network",
     });
     return {
-        photos: data?.feed?.photos?.edges?.map((e: any) => e?.node) ?? [],
-        stat: data?.feed?.stat,
-        hasPreviousPage: data?.feed?.photos?.pageInfo?.hasPreviousPage,
-        hasNextPage: data?.feed?.photos?.pageInfo?.hasNextPage,
+        photos: data?.feed?.photos?.edges?.map((e) => e.node) ?? [],
+        stat: data?.feed?.stat ?? [],
+        hasPreviousPage: data?.feed?.photos?.pageInfo?.hasPreviousPage ?? false,
+        hasNextPage: data?.feed?.photos?.pageInfo?.hasNextPage ?? false,
         loading,
         error,
         refetch,
