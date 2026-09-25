@@ -9,13 +9,22 @@ import {useGetUser} from "../../hooks/useGetUser";
 import {Loader} from "../Loader";
 import {CountriesProvider} from "../../context/CountriesContext";
 import {DialogProvider} from "../../context/DialogContext.tsx";
+import {QueryErrorAlert} from "../QueryErrorAlert";
+import {isUnauthorized} from "../../api/graphqlError";
 
 export const PrivateRoute = () => {
     const [sidebarState, setSidebarState] = useState(false);
 
-    const {data, loading, refetch} = useGetUser();
+    const {data, loading, error, refetch} = useGetUser();
     const sessionContext = {user: data?.user, updateUser: refetch};
 
+    if (!loading && !data && error && !isUnauthorized(error)) {
+        return (
+            <Box sx={{p: 3}}>
+                <QueryErrorAlert error={error} fallback="Can not load your profile" onRetry={() => refetch()}/>
+            </Box>
+        );
+    }
 
     return (
         loading ?

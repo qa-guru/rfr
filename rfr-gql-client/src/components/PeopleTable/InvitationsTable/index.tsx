@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {PeopleTable} from "..";
 import {useGetInvitations} from "../../../hooks/useGetInvitations";
+import {QueryErrorAlert} from "../../QueryErrorAlert";
 
 export const InvitationsTable = () => {
     const [page, setPage] = useState(0);
@@ -11,13 +12,15 @@ export const InvitationsTable = () => {
         setPage(0);
     }
 
-    const {data, hasNextPage, hasPreviousPage, refetch} = useGetInvitations({page, search});
+    const {data, error, hasNextPage, hasPreviousPage, refetch} = useGetInvitations({page, search});
 
     const onSearchSubmit = () => {
         refetch();
     }
 
     return (
+        <>
+        <QueryErrorAlert error={error} onRetry={() => refetch()}/>
         <PeopleTable
             data={data}
             page={page}
@@ -27,5 +30,6 @@ export const InvitationsTable = () => {
             setSearch={handleInputSearch}
             onSearchSubmit={onSearchSubmit}
         />
+        </>
     )
 }

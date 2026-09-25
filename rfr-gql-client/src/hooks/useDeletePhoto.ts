@@ -1,4 +1,4 @@
-import {gql, useMutation} from "@apollo/client";
+import {ApolloError, gql, useMutation} from "@apollo/client";
 import {GET_FEED} from "./useGetFeed.ts";
 
 interface DeletePhotoInput {
@@ -14,7 +14,7 @@ const DELETE_PHOTO = gql(`
 `);
 
 type DeletePhotoRequestType = {
-    onError: () => void,
+    onError: (error: ApolloError) => void,
     onCompleted: () => void,
     page: number,
     withFriends: boolean,
@@ -27,9 +27,6 @@ type DeletePhotoReturnType = {
 
 export const useDeletePhoto = (req: DeletePhotoRequestType): DeletePhotoReturnType => {
     const [deletePhoto, {loading}] = useMutation(DELETE_PHOTO, {
-        refetchQueries: [
-            'GetFeed'
-        ],
         onError: req.onError,
         onCompleted: req.onCompleted,
         refetchQueries: [{

@@ -3,7 +3,7 @@ scalar Date
 type Query {
     countries: [Country!]!
     user: User!
-    users(page:Int, size:Int, searchQuery:String): UserConnection
+    users(page:Int = 0, size:Int = 10, searchQuery:String): UserConnection
     feed(withFriends: Boolean!): Feed!
 }
 
@@ -21,16 +21,16 @@ type User {
     surname: String
     avatar: String
     friendStatus: FriendStatus
-    friends(page:Int, size:Int, searchQuery:String): UserConnection
-    incomeInvitations(page:Int, size:Int, searchQuery:String): UserConnection
-    outcomeInvitations(page:Int, size:Int, searchQuery:String): UserConnection
+    friends(page:Int = 0, size:Int = 10, searchQuery:String): UserConnection
+    incomeInvitations(page:Int = 0, size:Int = 10, searchQuery:String): UserConnection
+    outcomeInvitations(page:Int = 0, size:Int = 10, searchQuery:String): UserConnection
     location: Country
 }
 
 type Feed {
     username: String!
     withFriends: Boolean!
-    photos(page:Int, size:Int): PhotoConnection
+    photos(page:Int = 0, size:Int = 12): PhotoConnection
     stat: [Stat!]
 }
 

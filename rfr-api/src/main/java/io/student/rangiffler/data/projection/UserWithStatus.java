@@ -10,7 +10,9 @@ public record UserWithStatus(
     String firstname,
     String lastName,
     byte[] avatar,
-    UUID countryId,
+    String countryCode,
+    String countryName,
+    byte[] countryFlag,
     FriendshipStatus friendshipStatus,
     Boolean isRequester
 ) {

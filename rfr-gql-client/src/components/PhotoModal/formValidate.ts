@@ -25,6 +25,8 @@ export type PhotoFormProps = {
     id?: string,
 }
 
+export type PhotoFormField = Exclude<keyof PhotoFormProps, "id">;
+
 export const formInitialState: PhotoFormProps = {
     description: {
         value: "",

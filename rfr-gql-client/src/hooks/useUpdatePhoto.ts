@@ -1,10 +1,10 @@
-import {gql, useMutation} from "@apollo/client";
+import {ApolloError, gql, useMutation} from "@apollo/client";
 
 interface PhotoInput {
     variables: {
         input: {
             id: string,
-            src: string,
+            src?: string,
             description: string,
             country: {
                 code: string,
@@ -32,7 +32,7 @@ const UPDATE_PHOTO = gql(`
 `);
 
 type UpdatePhotoRequestType = {
-    onError: () => void,
+    onError: (error: ApolloError) => void,
     onCompleted: () => void,
 }
 
@@ -43,6 +43,7 @@ type UpdatePhotoReturnType = {
 
 export const useUpdatePhoto = (req: UpdatePhotoRequestType): UpdatePhotoReturnType => {
     const [updatePhoto, {loading}] = useMutation(UPDATE_PHOTO, {
+        refetchQueries: ["GetFeed"],
         onError: req.onError,
         onCompleted: req.onCompleted,
     });

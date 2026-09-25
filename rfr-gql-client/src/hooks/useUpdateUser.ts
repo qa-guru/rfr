@@ -1,4 +1,4 @@
-import {gql, useMutation} from "@apollo/client";
+import {ApolloError, gql, useMutation} from "@apollo/client";
 
 interface UserInput {
     variables: {
@@ -30,7 +30,7 @@ const UPDATE_USER = gql(`
 `);
 
 type UpdateUserRequestType = {
-    onError: () => void,
+    onError: (error: ApolloError) => void,
     onCompleted: () => void,
 }
 

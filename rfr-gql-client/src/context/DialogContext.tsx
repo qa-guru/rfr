@@ -28,12 +28,19 @@ import {
     TextField
 } from "@mui/material";
 import {ImageUpload} from "../components/ImageUpload";
-import {formHasErrors, formInitialState, formValidate, PhotoFormProps} from "../components/PhotoModal/formValidate.ts";
+import {
+    formHasErrors,
+    formInitialState,
+    formValidate,
+    PhotoFormField,
+    PhotoFormProps
+} from "../components/PhotoModal/formValidate.ts";
 import {MenuProps} from "../components/CountrySelect";
 import {useCountries} from "./CountriesContext.tsx";
 import {useCreatePhoto} from "../hooks/useCreatePhoto.ts";
 import {useSnackBar} from "./SnackBarContext.tsx";
 import {useUpdatePhoto} from "../hooks/useUpdatePhoto.ts";
+import {errorMessage} from "../api/graphqlError.ts";
 
 const Transition = forwardRef(function Transition(
     props: TransitionProps & {
@@ -69,13 +76,13 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
     const snackbar = useSnackBar();
 
     const {createPhoto} = useCreatePhoto({
-        onError: () => snackbar.showSnackBar("Can not create new post", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not create new post"), "error"),
         onCompleted: () => snackbar.showSnackBar("New post created", "success"),
-        withFriends: dialogData?.withFriends,
+        withFriends: dialogData?.withFriends ?? false,
     });
 
     const {updatePhoto} = useUpdatePhoto({
-        onError: () => snackbar.showSnackBar("Can not update post", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not update post"), "error"),
         onCompleted: () => snackbar.showSnackBar("Post updated", "success"),
     });
 
@@ -134,7 +141,8 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
     }
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const {name, value} = event.target;
+        const {value} = event.target;
+        const name = event.target.name as PhotoFormField;
         setFormValues({
             ...formValues,
             [name]: {
@@ -145,7 +153,8 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
     };
 
     const handleSelectValueChange = (event: SelectChangeEvent<string>) => {
-        const {name, value} = event.target;
+        const {value} = event.target;
+        const name = event.target.name as PhotoFormField;
         setFormValues({
             ...formValues,
             [name]: {

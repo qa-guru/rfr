@@ -9,6 +9,7 @@ import {SessionContext} from '../../context/SessionContext';
 import {useDeletePhoto} from '../../hooks/useDeletePhoto';
 import {useSnackBar} from '../../context/SnackBarContext';
 import {useLikePhoto} from '../../hooks/useLikePhoto';
+import {errorMessage} from '../../api/graphqlError';
 
 interface PhotoCardInterface {
     photo: Photo;
@@ -24,14 +25,14 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick, withFrien
 
 
     const {deletePhoto} = useDeletePhoto({
-        onError: () => snackbar.showSnackBar("Can not delete post", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not delete post"), "error"),
         onCompleted: () => snackbar.showSnackBar("Post deleted", "success"),
         page,
         withFriends,
     });
 
     const {likePhoto} = useLikePhoto({
-        onError: () => snackbar.showSnackBar("Post was not liked", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Post was not liked"), "error"),
         onCompleted: () => snackbar.showSnackBar("Post was succesfully liked", "success"),
     });
 

@@ -1,4 +1,4 @@
-import {gql, useMutation} from "@apollo/client";
+import {ApolloError, gql, useMutation} from "@apollo/client";
 import {GET_FEED} from "./useGetFeed.ts";
 
 interface PhotoInput {
@@ -33,7 +33,7 @@ const CREATE_PHOTO = gql(`
 
 type CreatePhotoRequestType = {
     withFriends: boolean,
-    onError: () => void,
+    onError: (error: ApolloError) => void,
     onCompleted: () => void,
 }
 
@@ -44,9 +44,6 @@ type CreatePhotoReturnType = {
 
 export const useCreatePhoto = (req: CreatePhotoRequestType): CreatePhotoReturnType => {
     const [createPhoto, {loading}] = useMutation(CREATE_PHOTO, {
-        refetchQueries: [
-            'GetFeed'
-        ],
         onError: req.onError,
         onCompleted: req.onCompleted,
         refetchQueries: [{

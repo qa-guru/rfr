@@ -1,4 +1,4 @@
-import {gql, useMutation} from "@apollo/client";
+import {ApolloError, gql, useMutation} from "@apollo/client";
 
 interface PhotoInput {
     variables: {
@@ -32,7 +32,7 @@ const LIKE_PHOTO = gql(`
 `);
 
 type LikePhotoRequestType = {
-    onError: () => void,
+    onError: (error: ApolloError) => void,
     onCompleted: () => void,
 }
 

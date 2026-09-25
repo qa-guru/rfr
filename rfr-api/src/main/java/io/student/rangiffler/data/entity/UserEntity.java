@@ -9,17 +9,18 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -55,7 +56,7 @@ public class UserEntity implements Serializable {
   @OneToMany(mappedBy = "addressee", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   private List<FriendshipEntity> friendshipAddressees = new ArrayList<>();
 
-  @OneToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "country_id", referencedColumnName = "id")
   private CountryEntity country;
 
@@ -66,10 +67,11 @@ public class UserEntity implements Serializable {
           fe.setRequester(this);
           fe.setAddressee(f);
           fe.setStatus(status);
-          fe.setCreatedDate(new Date());
+          fe.setCreatedDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
           return fe;
         }).toList();
     this.friendshipRequests.addAll(friendsEntities);
+    friendsEntities.forEach(fe -> fe.getAddressee().getFriendshipAddressees().add(fe));
   }
 
   public void removeFriends(UserEntity... friends) {
@@ -77,8 +79,8 @@ public class UserEntity implements Serializable {
     for (Iterator<FriendshipEntity> i = getFriendshipRequests().iterator(); i.hasNext(); ) {
       FriendshipEntity friendsEntity = i.next();
       if (idsToBeRemoved.contains(friendsEntity.getAddressee().getId())) {
-        friendsEntity.setAddressee(null);
         i.remove();
+        friendsEntity.getAddressee().getFriendshipAddressees().remove(friendsEntity);
       }
     }
   }
@@ -88,8 +90,8 @@ public class UserEntity implements Serializable {
     for (Iterator<FriendshipEntity> i = getFriendshipAddressees().iterator(); i.hasNext(); ) {
       FriendshipEntity friendsEntity = i.next();
       if (idsToBeRemoved.contains(friendsEntity.getRequester().getId())) {
-        friendsEntity.setRequester(null);
         i.remove();
+        friendsEntity.getRequester().getFriendshipRequests().remove(friendsEntity);
       }
     }
   }

@@ -25,14 +25,14 @@ public class UserMutationController {
 
   @MutationMapping
   public User user(@AuthenticationPrincipal Jwt principal,
-                   @Argument UserInput input) {
+                   @Argument("input") UserInput input) {
     String username = principal.getClaim("sub");
     return userService.updateUser(username, input);
   }
 
   @MutationMapping
   public User friendship(@AuthenticationPrincipal Jwt principal,
-                         @Argument FriendshipInput input) {
+                         @Argument("input") FriendshipInput input) {
     String username = principal.getClaim("sub");
     return switch (input.getAction()) {
       case ADD -> userService.addFriend(username, UUID.fromString(input.getUser()));

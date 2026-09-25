@@ -20,13 +20,14 @@ import {formHasErrors} from "../PhotoModal/formValidate";
 import {useUpdateUser} from "../../hooks/useUpdateUser";
 import {useSnackBar} from "../../context/SnackBarContext";
 import {SessionContext} from "../../context/SessionContext";
+import {errorMessage} from "../../api/graphqlError";
 
 export const ProfileForm = () => {
     const {countries} = useCountries();
     const {user} = useContext(SessionContext);
     const snackbar = useSnackBar();
     const {updateUser} = useUpdateUser({
-        onError: () => snackbar.showSnackBar("Can not update user", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not update user"), "error"),
         onCompleted: () => snackbar.showSnackBar("Your profile is successfully updated", "success"),
     });
 

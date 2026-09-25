@@ -2,6 +2,7 @@ package io.student.rangiffler.service.impl;
 
 import io.student.rangiffler.data.entity.CountryEntity;
 import io.student.rangiffler.data.repository.CountryRepository;
+import io.student.rangiffler.exception.ResourceNotFoundException;
 import io.student.rangiffler.model.types.Country;
 import io.student.rangiffler.service.api.CountryService;
 import io.student.rangiffler.util.BytesAsString;
@@ -28,6 +29,15 @@ public class CountryServiceImpl implements CountryService {
     return countryRepository.findAll().stream()
         .map(this::toCountryGql)
         .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Country getByCode(String code) {
+    return countryRepository.findByCode(code)
+        .map(this::toCountryGql)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format("Страна не найдена по коду: %s", code)));
   }
 
   private Country toCountryGql(CountryEntity entity) {

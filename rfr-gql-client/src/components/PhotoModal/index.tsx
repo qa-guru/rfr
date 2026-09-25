@@ -2,12 +2,13 @@ import {Box, Button, FormControl, Grid, InputLabel, MenuItem, Modal as MuiModal,
     OutlinedInput, Select, SelectChangeEvent, TextField, Typography} from "@mui/material";
 import {ChangeEvent, FormEvent, FC, useState, useEffect} from "react";
 import { ImageUpload } from "../ImageUpload";
-import { PhotoFormProps, formHasErrors, formInitialState, formValidate } from "./formValidate";
+import { PhotoFormField, PhotoFormProps, formHasErrors, formInitialState, formValidate } from "./formValidate";
 import { useCountries } from "../../context/CountriesContext";
 import { useCreatePhoto } from "../../hooks/useCreatePhoto";
 import {useUpdatePhoto} from "../../hooks/useUpdatePhoto";
 import { useSnackBar } from "../../context/SnackBarContext";
 import { MenuProps } from "../CountrySelect";
+import { errorMessage } from "../../api/graphqlError";
 
 const style = {
     position: 'absolute' as 'absolute',
@@ -29,17 +30,19 @@ interface PhotoModalInterface {
     };
     onClose: () => void;
     isEdit: boolean;
+    withFriends?: boolean;
 }
 
-export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit = false}) => {
+export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit = false, withFriends = false}) => {
     const {countries} = useCountries();
     const snackbar = useSnackBar();
     const {createPhoto} = useCreatePhoto({
-        onError: () => snackbar.showSnackBar("Can not create new post", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not create new post"), "error"),
         onCompleted: () => snackbar.showSnackBar("New post created", "success"),
+        withFriends,
     });
     const {updatePhoto} = useUpdatePhoto({
-        onError: () => snackbar.showSnackBar("Can not update post", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not update post"), "error"),
         onCompleted: () => snackbar.showSnackBar("Post updated", "success"),
     });
 
@@ -50,7 +53,8 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
     }, [modalState.formData]);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const {name, value} = event.target;
+        const {value} = event.target;
+        const name = event.target.name as PhotoFormField;
         setFormValues({
             ...formValues,
             [name]: {
@@ -66,7 +70,8 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
     };
 
     const handleSelectValueChange = (event: SelectChangeEvent<string>) => {
-        const {name, value} = event.target;
+        const {value} = event.target;
+        const name = event.target.name as PhotoFormField;
         setFormValues({
             ...formValues,
             [name]: {

@@ -35,6 +35,7 @@ export const PhotoContainer: FC<PhotoContainerInterface> = ({
         dialog.showDialog({
             title: "Edit photo",
             isEdit: true,
+            withFriends,
             formData: {
                 ...formInitialState,
                 id: image.id,

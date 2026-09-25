@@ -4,10 +4,12 @@ import io.student.rangiffler.model.RegistrationForm;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
+import java.util.Objects;
+
 public class EqualPasswordsValidator implements ConstraintValidator<EqualPasswords, RegistrationForm> {
   @Override
   public boolean isValid(RegistrationForm form, ConstraintValidatorContext context) {
-    boolean isValid = form.password().equals(form.passwordSubmit());
+    boolean isValid = Objects.equals(form.password(), form.passwordSubmit());
     if (!isValid) {
       context.disableDefaultConstraintViolation();
       context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate())

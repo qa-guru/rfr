@@ -1,4 +1,4 @@
-import {gql, useMutation} from "@apollo/client";
+import {ApolloError, gql, useApolloClient, useMutation} from "@apollo/client";
 
 interface FriendshipInput {
     variables: {
@@ -6,7 +6,9 @@ interface FriendshipInput {
             user: string,
             action: "ADD" | "ACCEPT" | "REJECT" | "DELETE",
         }
-    }
+    },
+    onCompleted?: () => void,
+    onError?: (error: ApolloError) => void,
 }
 
 const FRIENDSHIP_ACTION = gql(`
@@ -19,19 +21,26 @@ const FRIENDSHIP_ACTION = gql(`
        }
 `);
 
-type UpdateFriendshipRequestType = {
-    onError: () => void,
-    onCompleted: () => void,
-}
+const PEOPLE_QUERIES = ["GetPeople", "GetFriends", "GetInvitations", "GetOutcomeInvitations"];
 
 type UpdateFriendshipReturnType = {
     updateFriendship: (updateUserInput: FriendshipInput) => void,
     loading: boolean,
 }
-export const useUpdateFriendshipStatus = (req: UpdateFriendshipRequestType): UpdateFriendshipReturnType => {
-    const [updateFriendship, {loading}] = useMutation(FRIENDSHIP_ACTION, {
-        onError: req.onError,
-        onCompleted: req.onCompleted,
+export const useUpdateFriendshipStatus = (): UpdateFriendshipReturnType => {
+    const client = useApolloClient();
+    const [mutate, {loading}] = useMutation(FRIENDSHIP_ACTION, {
+        refetchQueries: PEOPLE_QUERIES,
+        awaitRefetchQueries: true,
     });
+    const updateFriendship = ({onError, ...options}: FriendshipInput) => {
+        mutate({
+            ...options,
+            onError: (error) => {
+                client.refetchQueries({include: PEOPLE_QUERIES});
+                onError?.(error);
+            },
+        });
+    };
     return {updateFriendship, loading};
 };
