@@ -17,12 +17,12 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 @EnableMethodSecurity
 @Configuration
-public class RococoApiConfiguration {
+public class RangifflerApiConfiguration {
 
   private final CorsCustomizer corsCustomizer;
 
   @Autowired
-  public RococoApiConfiguration(CorsCustomizer corsCustomizer) {
+  public RangifflerApiConfiguration(CorsCustomizer corsCustomizer) {
     this.corsCustomizer = corsCustomizer;
   }
 
