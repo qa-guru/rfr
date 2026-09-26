@@ -1,4 +1,3 @@
-import {Box} from "@mui/material";
 import {FC} from "react";
 
 interface TabPanelProps {
@@ -14,9 +13,7 @@ export const TabPanel: FC<TabPanelProps> = ({children, value}) => {
             id={`simple-tabpanel-${value}`}
             aria-labelledby={`simple-tab-${value}`}
         >
-            <Box sx={{p: 3}}>
-                {children}
-            </Box>
+            {children}
         </div>
     );
 }

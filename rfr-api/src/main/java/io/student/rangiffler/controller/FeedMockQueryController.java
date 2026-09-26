@@ -46,12 +46,13 @@ public class FeedMockQueryController {
   @SchemaMapping(typeName = "Feed", field = "photos")
   public Page<Photo> photos(Feed feed,
                             @Argument("page") @Nullable Integer page,
-                            @Argument("size") @Nullable Integer size) {
+                            @Argument("size") @Nullable Integer size,
+                            @Argument("country") @Nullable String country) {
     PageRequest pageRequest = PageRequest.of(
         Objects.requireNonNullElse(page, DEFAULT_PAGE),
         Objects.requireNonNullElse(size, DEFAULT_SIZE)
     );
-    List<Photo> photos = feedMockData.photos(feed.getWithFriends());
+    List<Photo> photos = feedMockData.photos(feed.getWithFriends(), country);
     int from = (int) Math.min(pageRequest.getOffset(), photos.size());
     int to = Math.min(from + pageRequest.getPageSize(), photos.size());
     return new PageImpl<>(photos.subList(from, to), pageRequest, photos.size());

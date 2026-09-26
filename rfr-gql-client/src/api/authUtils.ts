@@ -19,12 +19,24 @@ const generateCodeChallenge = () => {
     return base64Url(sha256(codeVerifier!));
 }
 
+const currentTheme = (): "light" | "dark" => {
+    const mode = localStorage.getItem("mui-mode");
+    if (mode === "system") {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    return mode === "dark" ? "dark" : "light";
+}
+
 const getAuthLink = (codeChallenge: string) => {
-    return `${AUTH_URL}/oauth2/authorize?response_type=code&client_id=${CLIENT_ID}&scope=openid&redirect_uri=${FRONT_URL}/authorized&code_challenge=${codeChallenge}&code_challenge_method=S256`
+    return `${AUTH_URL}/oauth2/authorize?response_type=code&client_id=${CLIENT_ID}&scope=openid&redirect_uri=${FRONT_URL}/authorized&code_challenge=${codeChallenge}&code_challenge_method=S256&theme=${currentTheme()}`
+}
+
+const getRegisterLink = () => {
+    return `${AUTH_URL}/register?theme=${currentTheme()}`
 }
 
 const getLogoutLink = (token: string) => {
-    return `${AUTH_URL}/connect/logout?id_token_hint=${token}&post_logout_redirect_uri=${FRONT_URL}/logout`
+    return `${AUTH_URL}/connect/logout?id_token_hint=${token}&post_logout_redirect_uri=${FRONT_URL}/logout&theme=${currentTheme()}`
 }
 
 const idTokenFromLocalStorage = (): string => {
@@ -62,6 +74,7 @@ export {
     generateCodeVerifier,
     getAuthLink,
     getLogoutLink,
+    getRegisterLink,
     idTokenFromLocalStorage,
     getTokenFromUrlEncodedParams,
     clearSession,

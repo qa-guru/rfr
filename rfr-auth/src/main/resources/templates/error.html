@@ -4,7 +4,15 @@
     <title>Error | Rangiffler</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" th:href="@{/images/favicon.ico}"/>
-    <link href="../static/styles/styles.css" th:href="@{/styles/styles.css}" rel="stylesheet"
+    <script>
+        (function () {
+            var saved = document.cookie.match(/(?:^|; )rangiffler-theme=(light|dark)/);
+            var theme = saved ? saved[1]
+                : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.classList.add(theme);
+        })();
+    </script>
+    <link href="../static/styles/styles.css" th:href="@{/styles/styles.css(v=3)}" rel="stylesheet"
           type="text/css"/>
 </head>
 <body>
@@ -13,17 +21,17 @@
         <div class="main__hero"></div>
         <section class="main__form">
             <h1 class="header">
-                <span class="header__accent">R</span>angiffler
+                <span class="header__logo" role="img" aria-label="Rangiffler logo"></span>
+                <span><span class="header__accent">R</span>angiffler</span>
             </h1>
-            <img class="header__logo" src="./../static/images/deer-logo.svg" width="90" th:src="@{/images/deer-logo.svg}"
-                 alt="Rangiffler logo"/>
+            <p class="header__subtitle">Something went wrong. Please try again.</p>
             <div class="form">
-                <p class="form__error" th:text="|Error [[${status}]] [[${error}]]|">Unexpected error</p>
-                <p class="form__paragraph" th:if="${message}" th:text="${message}">Something went wrong.</p>
-                <p class="form__paragraph" th:if="${path}" th:text="|Path: [[${path}]]|">Path: /</p>
-                <p class="form__paragraph">
-                    <a class="form__link" th:href="@{|${frontUri}|}">Back to Rangiffler</a>
+                <p class="form__error form__alert">
+                    <span class="form__alert-title" th:text="|Error ${status} · ${error}|">Unexpected error</span>
+                    <span class="form__alert-text" th:if="${message}" th:text="${message}">Something went wrong.</span>
                 </p>
+                <p class="form__meta" th:if="${path}" th:text="|Path: ${path}|">Path: /</p>
+                <a class="form_sign-in" th:href="@{|${frontUri}|}">Back to Rangiffler</a>
             </div>
         </section>
     </div>

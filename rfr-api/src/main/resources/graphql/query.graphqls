@@ -30,7 +30,7 @@ type User {
 type Feed {
     username: String!
     withFriends: Boolean!
-    photos(page:Int = 0, size:Int = 12): PhotoConnection
+    photos(page:Int = 0, size:Int = 12, country: String): PhotoConnection
     stat: [Stat!]
 }
 

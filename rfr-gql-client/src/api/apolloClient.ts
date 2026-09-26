@@ -36,5 +36,11 @@ const errorLink = new ErrorLink(({error, operation}) => {
 
 export const apiClient = new ApolloClient({
     link: ApolloLink.from([errorLink, headerLink, apolloHttpLink]),
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+        typePolicies: {
+            Feed: {
+                merge: true,
+            },
+        },
+    }),
 });

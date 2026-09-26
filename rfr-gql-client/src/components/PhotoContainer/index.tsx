@@ -1,35 +1,56 @@
-import Container from "@mui/material/Container";
 import Grid from "@mui/material/Grid";
-import {FC} from "react";
+import {FC, useEffect, useRef} from "react";
 import {PhotoCard} from "../PhotoCard";
 import {Photo} from "../../types/Photo";
-import {Box, Button} from "@mui/material";
-import {Loader} from "../Loader";
+import {Box, Button, Card, CircularProgress, Skeleton, Typography} from "@mui/material";
+import AddAPhotoOutlinedIcon from '@mui/icons-material/AddAPhotoOutlined';
+import TravelExploreRoundedIcon from '@mui/icons-material/TravelExploreRounded';
 import {useDialog} from "../../context/useDialog.ts";
 import {formInitialState} from "../PhotoModal/formValidate.ts";
+
+const gridItemSize = {xs: 12, sm: 6, md: 4, lg: 3, xl: 2};
+const SKELETON_COUNT = 8;
 
 interface PhotoContainerInterface {
     data: Photo[];
     hasNextPage: boolean;
-    loadNext: () => void;
-    hasPreviousPage: boolean;
-    loadPrevious: () => void;
+    loadMore: () => void;
     loading: boolean;
+    loadingMore: boolean;
+    refreshing?: boolean;
     withFriends: boolean;
-    page: number;
+    onAddClick: () => void;
+    filterCountryName?: string;
+    onResetFilter?: () => void;
 }
 
 export const PhotoContainer: FC<PhotoContainerInterface> = ({
                                                                 data,
                                                                 hasNextPage,
-                                                                loadNext,
-                                                                hasPreviousPage,
-                                                                loadPrevious,
+                                                                loadMore,
                                                                 loading,
+                                                                loadingMore,
+                                                                refreshing = false,
                                                                 withFriends,
-                                                                page
+                                                                onAddClick,
+                                                                filterCountryName,
+                                                                onResetFilter,
                                                             }) => {
     const dialog = useDialog();
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel || !hasNextPage) {
+            return;
+        }
+        const observer = new IntersectionObserver(
+            (entries) => entries[0].isIntersecting && loadMore(),
+            {rootMargin: "400px"},
+        );
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [hasNextPage, loadMore]);
 
     const handleSelectImage = (image: Photo) => {
         dialog.showDialog({
@@ -56,69 +77,74 @@ export const PhotoContainer: FC<PhotoContainerInterface> = ({
     };
 
     if (loading) {
-        return <Loader/>;
+        return (
+            <Grid container spacing={3}>
+                {Array.from({length: SKELETON_COUNT}, (_, i) => (
+                    <Grid key={i} size={gridItemSize}>
+                        <Card>
+                            <Skeleton variant="rectangular" sx={{aspectRatio: "4 / 3", height: "auto"}}/>
+                            <Box sx={{p: 2}}>
+                                <Skeleton width="80%"/>
+                                <Skeleton width="40%"/>
+                            </Box>
+                        </Card>
+                    </Grid>
+                ))}
+            </Grid>
+        );
+    }
+
+    if (!data.length && filterCountryName) {
+        return (
+            <Card sx={{py: 8, px: 3, textAlign: "center"}}>
+                <TravelExploreRoundedIcon sx={{fontSize: 72, color: "primary.main", opacity: 0.6}}/>
+                <Typography variant="h6" component="p" sx={{mt: 2}}>
+                    No photos from {filterCountryName}
+                </Typography>
+                <Button variant="outlined" onClick={onResetFilter} sx={{mt: 3}}>
+                    Show all countries
+                </Button>
+            </Card>
+        );
+    }
+
+    if (!data.length) {
+        return (
+            <Card sx={{py: 8, px: 3, textAlign: "center"}}>
+                <TravelExploreRoundedIcon sx={{fontSize: 72, color: "primary.main", opacity: 0.6}}/>
+                <Typography variant="h6" component="p" sx={{mt: 2}}>
+                    No travels yet
+                </Typography>
+                <Typography variant="body2" sx={{color: "text.secondary", mt: 0.5, mb: 3}}>
+                    Share a photo from your trip — the country will light up on the map.
+                </Typography>
+                <Button variant="contained" startIcon={<AddAPhotoOutlinedIcon/>} onClick={onAddClick}>
+                    Add your first photo
+                </Button>
+            </Card>
+        );
     }
 
     return (
-        <Container sx={{
-            position: "relative",
-        }}>
-            {loading ?
-                <Loader/> :
-                <>
-                    <Grid container spacing={3}>
-                        {data.map((item: Photo) => (
-                            <Grid key={item.id} size={3}>
-                                <PhotoCard
-                                    photo={item}
-                                    onEditClick={() => handleSelectImage(item)}
-                                    withFriends={withFriends}
-                                    page={page}
-                                />
-                            </Grid>
-                        ))}
+        <>
+            <Grid
+                container
+                spacing={3}
+                aria-busy={refreshing}
+                sx={{opacity: refreshing ? 0.55 : 1, transition: "opacity 0.2s ease"}}
+            >
+                {data.map((item: Photo) => (
+                    <Grid key={item.id} size={gridItemSize}>
+                        <PhotoCard
+                            photo={item}
+                            onEditClick={() => handleSelectImage(item)}
+                        />
                     </Grid>
-                    {
-                        data?.length > 0 &&
-                        (
-                            <Box sx={{
-                                display: "flex",
-                                width: "100%",
-                                justifyContent: "space-between",
-                            }}>
-                                <Button
-                                    type="button"
-                                    variant="contained"
-                                    disabled={!hasPreviousPage}
-                                    sx={{
-                                        margin: "2rem auto",
-                                        display: "block",
-                                        width: "100%",
-                                        maxWidth: "200px",
-                                    }}
-                                    onClick={loadPrevious}
-                                >
-                                    Previous
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="contained"
-                                    disabled={!hasNextPage}
-                                    sx={{
-                                        margin: "2rem auto",
-                                        display: "block",
-                                        width: "100%",
-                                        maxWidth: "200px",
-                                    }}
-                                    onClick={loadNext}
-                                >
-                                    Next
-                                </Button>
-                            </Box>
-                        )
-                    }
-                </>
-            }
-        </Container>
+                ))}
+            </Grid>
+            <Box ref={sentinelRef} sx={{display: "flex", justifyContent: "center", py: 4}}>
+                {loadingMore && <CircularProgress size={28}/>}
+            </Box>
+        </>
     );
 };

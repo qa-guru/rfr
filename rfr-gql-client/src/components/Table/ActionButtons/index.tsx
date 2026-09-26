@@ -1,7 +1,7 @@
 import {FC} from "react";
 import {useSnackBar} from "../../../context/useSnackBar";
 import {useUpdateFriendshipStatus} from "../../../hooks/useUpdateFriendshipStatus";
-import {Button, Chip} from "@mui/material";
+import {Box, Button, Chip} from "@mui/material";
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import RemoveOutlinedIcon from '@mui/icons-material/RemoveOutlined';
 import {errorMessage} from "../../../api/graphqlError";
@@ -55,7 +55,7 @@ export const ActionButtons: FC<ActionButtonsInterface> = ({userId, friendStatus}
     }
 
     return (
-        <>
+        <Box sx={{display: "inline-flex", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end", gap: 1}}>
             {
                 friendStatus === "FRIEND" && (
                     <Button
@@ -77,7 +77,7 @@ export const ActionButtons: FC<ActionButtonsInterface> = ({userId, friendStatus}
                     <>
                         <Chip
                             sx={{
-                                marginRight: 1,
+
                                 width: 100
                             }}
                             label="Waiting..."
@@ -107,7 +107,7 @@ export const ActionButtons: FC<ActionButtonsInterface> = ({userId, friendStatus}
                             variant="contained"
                             size="small"
                             sx={{
-                                marginRight: 1,
+
                                 width: 100,
                             }}
                             onClick={handleAcceptInvitation}
@@ -130,6 +130,6 @@ export const ActionButtons: FC<ActionButtonsInterface> = ({userId, friendStatus}
                     </>
                 )
             }
-        </>
+        </Box>
     )
 }

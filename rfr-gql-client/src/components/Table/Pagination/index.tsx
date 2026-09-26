@@ -1,5 +1,7 @@
 import {Box, Button} from "@mui/material"
 import {FC} from "react"
+import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 
 interface TablePaginationInterface {
     hasNextValues: boolean;
@@ -14,36 +16,36 @@ export const TablePagination: FC<TablePaginationInterface> = ({
                                                                   onPreviousClick,
                                                                   onNextClick
                                                               }) => {
+    if (!hasNextValues && !hasPreviousValues) {
+        return null;
+    }
     return (
         <Box sx={{
             display: "flex",
-            width: "100%",
             alignItems: "center",
             justifyContent: "flex-end",
+            gap: 1,
+            px: 2,
+            py: 1.5,
+            borderTop: 1,
+            borderColor: "divider",
         }}>
             <Button type="button"
-                    sx={{
-                        margin: 2,
-                        width: 100,
-                    }}
-                    variant="outlined"
+                    size="small"
+                    startIcon={<ChevronLeftRoundedIcon/>}
                     disabled={!hasPreviousValues}
                     onClick={onPreviousClick}
             >
                 Previous
             </Button>
             <Button type="button"
-                    sx={{
-                        margin: 2,
-                        width: 100,
-                    }}
-                    variant="outlined"
+                    size="small"
+                    endIcon={<ChevronRightRoundedIcon/>}
                     disabled={!hasNextValues}
                     onClick={onNextClick}
             >
                 Next
             </Button>
-
         </Box>
     )
 }
