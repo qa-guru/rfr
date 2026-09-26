@@ -36,7 +36,7 @@ rfr/
 │   ├── Реальные контроллеры для пользователей и стран
 │   └── Flyway миграции БД
 ├── rfr-gql-client/        # React + TypeScript Frontend (готов)
-└── rfr-e2e/               # E2E тесты (заготовка)
+└── rfr-e2e/               # E2E тесты: JUnit 6 + Playwright + Allure 3 (заготовка)
 ```
 
 **Порты:**
@@ -45,16 +45,18 @@ rfr/
 - rfr-gql-client: 3001
 
 **Технологии:**
-- Backend: Spring Boot 4.0.2, Spring for GraphQL, Spring Security, JPA, Flyway
-- Frontend: React 18, TypeScript, Apollo Client, Material-UI
+- Сборка: Java 25, Gradle 9.7.1
+- Backend: Spring Boot 4.1.1, Spring for GraphQL, Spring Security, JPA, Flyway
+- Frontend: React 19, TypeScript 6, Vite 8, Apollo Client 4, Material UI 9, React Router 8
 - Auth: Spring Authorization Server
-- БД: MySQL 8
+- БД: MySQL 8.4
+- E2E: JUnit 6, Playwright Java 1.63, Allure 3
 
 # С чего начать?
 
 Мы подготовили для тебя полностью рабочий frontend, минимально работающий сервис auth, а также базовую реализацию rfr-api с mock контроллерами.
 Так как данный проект использует GraphQL, а frontend уже написан под конкретный API, то в проекте есть файл
-`schema.graphqls` - он используется бэкендом rfr-api, куда прилетают все запросы с фронта.
+`rfr-api/src/main/resources/graphql/query.graphqls` - он используется бэкендом rfr-api, куда прилетают все запросы с фронта.
 
 Т.к. механика проекта сложнее, чем в Niffler и в Rococo, а именно, подразумевает хранение фоток, лайков, статистики, дружбы с другими юзерами и т.д.,
 я добавил в проект схему базы данных - `V1__schema_init.sql`. 
@@ -112,7 +114,7 @@ npm run dev
 
 #### 5. Проверь работоспособность
 
-Кнопка "Войти" работает через сервис auth. После успешной авторизации ты попадешь на главную страницу Rangiffler.
+Кнопка "Login" работает через сервис auth. После успешной авторизации ты попадешь на главную страницу Rangiffler.
 
 Mock контроллеры в rfr-api будут возвращать статические данные из JSON файлов для ленты фотографий.
 Реальная работа с пользователями и странами уже реализована через базу данных.
@@ -136,13 +138,16 @@ REST, gRPC или SOAP. Я бы посоветовал отдать предпо
 В проекте уже есть базовая монолитная реализация rfr-api. Что уже реализовано:
 
 **Готово:**
-- SecurityConfig с OAuth 2.0 Resource Server
-- GraphQL схема (`schema.graphqls`)
-- Модели для GraphQL типов (User, Country, Feed, Photo, Stat, Likes)
-- Mock контроллеры для фотографий (FeedMockQueryController, PhotoMockMutationController)
-- Реальные контроллеры для пользователей и стран (UserQueryController, UserMutationController, CountryQueryController)
+- Security (`RococoApiConfiguration`): OAuth 2.0 Resource Server, CORS, `@PreAuthorize` на контроллерах
+- GraphQL схема `rfr-api/src/main/resources/graphql/query.graphqls`
+- Java-модели GraphQL типов (`User`, `Country`, `Feed`, `Photo`, `Stat`, `Likes` и inputs) — их генерирует плагин
+  DGS Codegen (задача `generateJava` в `rfr-api/build.gradle`) в пакет `io.student.rangiffler.model.types`, писать их руками не нужно
+- Mock контроллеры для фотографий (FeedMockQueryController, PhotoMockMutationController): лента отдается с пагинацией
+  и поддерживает фильтр по стране `photos(country: "fr")`
+- Реальные контроллеры для пользователей, дружбы и стран (UserQueryController, UserMutationController, CountryQueryController)
 - Сервисный слой (UserService, CountryService)
-- JPA entities и repositories
+- JPA entities, repositories и projection `UserWithStatus`
+- Единый контракт ошибок GraphQL (`GraphQlExceptionResolver`)
 - Flyway миграции для БД
 - Mock данные в JSON файлах (`resources/mock/`)
 
@@ -182,7 +187,7 @@ model-классов, получить перформанс и простое н
 
 ##### Особенности реализации backend
 
-###### Connection-mипы данных для GraphQL, пагинация
+###### Connection-типы данных для GraphQL, пагинация
 
   В отличие от Niffler, в поставляемом файле `query.graphqls` есть несколько используемых типов `type` - которые не описаны в этом файле!
 Это типы `UserConnection` и `PhotoConnection`. Даже IDEA отобразит их красным: 
@@ -198,7 +203,7 @@ model-классов, получить перформанс и простое н
     - Что вернуть из контроллеров в качестве ответа с типом `{Typename}Connection` - с учетом что мы его не описываем руками и классы для него не создаем
     - Как сделать запрос в БД с пагинацией, что бы было, что возвращать. Ответы будут ниже
 
-###### Pageble контроллеры (дата-фетчеры) для GraphQL
+###### Pageable контроллеры (дата-фетчеры) для GraphQL
 
   Пусть у нас есть тип User:
 ```graphql
@@ -210,54 +215,60 @@ type User {
   и есть query с пагинацией на запрос всех юзеров:
 ```graphql
 type Query {
-  users(page:Int, size:Int, searchQuery:String): UserConnection
+  users(page:Int = 0, size:Int = 10, searchQuery:String): UserConnection
 }
 ```
-  Тогда создадим java-класс **только для типа User**, не создавая для UserConnection:
-```java
-public record UserGql(UUID id, String username) {}
+  Java-класс нужен **только для типа User**. В проекте его генерирует DGS Codegen (`io.student.rangiffler.model.types.User`),
+для `UserConnection` класс не создается. С точки зрения Spring-graphql типы `{Typename}Connection` не что иное, как `Slice<Typename>`
+(или его наследник `Page<Typename>`) из пакета `org.springframework.data.domain`. Для codegen это соответствие прописано в `rfr-api/build.gradle`:
+```groovy
+generateJava {
+    typeMapping = [
+        'UserConnection' : 'org.springframework.data.domain.Page<io.student.rangiffler.model.types.User>',
+        'PhotoConnection': 'org.springframework.data.domain.Page<io.student.rangiffler.model.types.Photo>',
+        'Date'           : 'java.time.LocalDate'
+    ]
+}
 ```
-  И опишем контроллер, возвращающий UserConnection. С точки зрения Spring-graphql типы `{Typename}Connection` не что иное, как `Slice<Typename>`
-из пакета `org.springframework.data.domain`.
-Таким образом в нашем примере контроллер для query `users` вернет `Slice<UserGql>`:
+  Таким образом в нашем примере контроллер для query `users` вернет `Page<User>`:
 ```java
   @QueryMapping
-  public Slice<UserGql> users(@AuthenticationPrincipal Jwt principal,
-                              @Argument int page,
-                              @Argument int size,
-                              @Argument @Nullable String searchQuery) {
-  return userService.allUsers(
-          principal.getClaim("sub"),
-          PageRequest.of(page, size),
-          searchQuery
-  );
-}
-```
-  Здесь первый аргумент - это просто сессия (как и в Niffler), `int page, int size` - два обязательных аргумента пагинации, они прилетят с фронта.
-Третий аргумент `String searchQuery` - необязательный аргумент, который фронт отправляет при использовании поиска в таблицах.
-Обратите внимение на конструкцию `PageRequest.of(page, size)` - она создает объект `Pageable` - и именно используя его мы можем получить `Slice<UserEntity>`
-```java
-public interface UserRepository extends JpaRepository<UserEntity, UUID> {
+  public Page<User> users(@AuthenticationPrincipal Jwt principal,
+                          @Argument("page") @Nullable Integer page,
+                          @Argument("size") @Nullable Integer size,
+                          @Argument("searchQuery") @Nullable String searchQuery) {
+    return userService.allUsers(
+        principal.getClaim("sub"),
+        pageRequest(page, size),
+        searchQuery
+    );
+  }
 
-  @Query("select u from UserEntity u where u.username <> :username" +
-          " and (u.username like %:searchQuery% or u.firstname like %:searchQuery% or u.surname like %:searchQuery%)")
-  Slice<UserEntity> findByUsernameNotAndSearchQuery(@Param("username") String username,
-                                                    @Nonnull Pageable pageable,
-                                                    @Param("searchQuery") String searchQuery);
-}
+  private static PageRequest pageRequest(@Nullable Integer page, @Nullable Integer size) {
+    return PageRequest.of(
+        Objects.requireNonNullElse(page, DEFAULT_PAGE),
+        Objects.requireNonNullElse(size, DEFAULT_SIZE)
+    );
+  }
 ```
-  Тип `Slice` - это ровно то, что ожидает от вас получит фронт, вам лишь придется преобразовать его в `Slice<UserGql>`,
-для этого надо воспользоваться методом `map()`, имеющимся в классе `Slice`.
-Обратите внимание, что этот вариант метода требует обязательного `@Param("searchQuery") String searchQuery` - поэтому нужно
-реализовать и второй метод в репозитории, без searchQuery. А логика, какой из них вызвать, будет на уровне сервиса, в зависимости от того,
-придет в контроллер с фронта этот searchQuery или нет.
+  Здесь первый аргумент - это просто сессия (как и в Niffler), `page, size` - аргументы пагинации, они прилетят с фронта.
+Третий аргумент `String searchQuery` - необязательный аргумент, который фронт отправляет при использовании поиска в таблицах.
+Обратите внимание на несколько деталей:
+- `page` и `size` объявлены как `@Nullable Integer`, а не `int`: у аргументов в схеме есть значения по умолчанию, но клиент может явно
+  передать `null` - тогда примитивный `int` уронит запрос.
+- Имена аргументов указаны явно - `@Argument("page")`. Если имя не указано, Spring-graphql берет его из байткода, а для этого класс должен быть
+  скомпилирован с флагом `-parameters`. Gradle-сборка Spring Boot его включает, а, например, сборка из VS Code (вывод в `bin/main`) - нет,
+  и приложение падает на старте с `Name for argument of type [...] not specified`.
+- Конструкция `PageRequest.of(page, size)` создает объект `Pageable` - и именно используя его мы можем получить из репозитория `Page`/`Slice`.
+
+  `Page`/`Slice` - это ровно то, что ожидает получить фронт, вам лишь придется преобразовать `Page<UserEntity>` (или projection)
+в `Page<User>`, для этого надо воспользоваться методом `map()`, имеющимся в классе `Page`.
 
   Почитать про пагинацию в JPA Repository, дополнительно, тут: https://www.baeldung.com/spring-data-jpa-pagination-sorting
 
-###### Pageble в JpaRepository
+###### Pageable в JpaRepository
 
-  Вы, вероятно, заметили аннотацию `@Query` над методом в примере, содержащую JPQL запрос. Это не спроста.
-Дело в том, что единственный способ получить функционал пагинации - это доставать данные из БД **одним запросом**.
+  Дело в том, что единственный способ получить функционал пагинации - это доставать данные из БД **одним запросом**.
 
   Это значит, что если нам нужны допустим фотографии юзера с пагинацией, мы не можем сделать так:
 ```java
@@ -267,101 +278,132 @@ return user.getPhotos();
   В этом коде _просто нет возможности использовать пагинацию._ Но что если нам нужно запросить фотографии юзера с пагинацией?
 
 ```java
-  Slice<PhotoEntity> findByUser(@Nonnull UserEntity user,
-                                @Nonnull Pageable pageable);
+  Page<PhotoEntity> findByUser(@Nonnull UserEntity user,
+                               @Nonnull Pageable pageable);
 
 ```
   Вот так уже сработает - тут всего один запрос, и поэтому он работает с `Pageable`.
 
-  Я предлагаю вам свой вариант получения друзей и заявок на дружбу одним запросом:
+###### Дружба: одна строка на пару пользователей
 
+  Дружба хранится в таблице `friendship` (см. `V1__schema_init.sql`) **одной строкой на пару пользователей**: `requester` - кто отправил заявку,
+`addressee` - кому, и статус - enum `FriendshipStatus.PENDING`/`FriendshipStatus.ACCEPTED`. При принятии заявки строка не дублируется,
+у нее меняется только статус. Отклонение заявки и удаление из друзей удаляют строку.
+
+  Чтобы два пользователя не могли одновременно отправить друг другу встречные заявки, уникальность неупорядоченной пары
+гарантирует сама БД - через генерируемые колонки:
+```sql
+user_low_id  binary(16) as (least(requester_id, addressee_id)) stored,
+user_high_id binary(16) as (greatest(requester_id, addressee_id)) stored,
+constraint uq_friendship_pair unique (user_low_id, user_high_id),
+constraint ck_friendship_distinct check (requester_id <> addressee_id)
+```
+
+  В JPA дружба - самостоятельный агрегат `FriendshipEntity` со своим `FriendshipRepository`, а не коллекции внутри `UserEntity`:
+- связи `requester`/`addressee` - `@ManyToOne(fetch = LAZY)` без каскадов;
+- `@Version` - optimistic lock на случай, если один пользователь принимает заявку, а другой в этот момент ее отменяет;
+- правила переходов живут в самой сущности: `FriendshipEntity.request(...)`, `accept(actor)`, `assertCanDecline(actor)` - принять или
+  отклонить заявку может только ее получатель;
+- найти связь двух пользователей в любом направлении можно одним запросом:
+```java
+public interface FriendshipRepository extends JpaRepository<FriendshipEntity, UUID> {
+
+  @Query("select f from FriendshipEntity f " +
+      "where (f.requester.id = :first and f.addressee.id = :second) " +
+      "   or (f.requester.id = :second and f.addressee.id = :first)")
+  Optional<FriendshipEntity> findPair(@Param("first") UUID first, @Param("second") UUID second);
+}
+```
+  Конфликты параллельных изменений сервис превращает в понятную бизнес-ошибку, а не в `INTERNAL_ERROR`: новая заявка сохраняется через
+`saveAndFlush` (ловим `DataIntegrityViolationException` от уникального индекса), а после принятия/удаления вызывается явный `flush()`
+(ловим `OptimisticLockingFailureException`). Без явного flush SQL выполнится только на коммите транзакции - уже за пределами
+`try/catch` в методе сервиса.
+
+###### Списки пользователей со статусом дружбы одним запросом
+
+  Все списки людей (All People, Friends, Income/Outcome invitations) достаются из БД одним запросом с пагинацией и сразу со статусом дружбы
+относительно текущего пользователя. Для этого используется projection - record `UserWithStatus`, который заполняется прямо в JPQL
+через `select new`:
+```java
+public record UserWithStatus(
+    UUID id,
+    String username,
+    String firstname,
+    String lastName,
+    byte[] avatar,
+    String countryCode,
+    String countryName,
+    byte[] countryFlag,
+    FriendshipStatus friendshipStatus,
+    Boolean isRequester
+) {
+}
+```
 ```java
 public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
-  Optional<UserEntity> findByUsername(@Nonnull String username);
+  String SELECT_USER_WITH_STATUS =
+      "select new io.student.rangiffler.data.projection.UserWithStatus(" +
+          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
+          "f.status, " +
+          "case when f.requester.id = :me then true when f.addressee.id = :me then false else null end) " +
+          "from UserEntity u join u.country c ";
+  String PAIR_WITH_ME =
+      "FriendshipEntity f on (f.requester.id = :me and f.addressee = u) " +
+          "or (f.addressee.id = :me and f.requester = u) ";
+  String SEARCH =
+      "and (lower(u.username) like lower(concat('%', :searchQuery, '%')) " +
+          "or lower(u.firstname) like lower(concat('%', :searchQuery, '%')) " +
+          "or lower(u.lastName) like lower(concat('%', :searchQuery, '%'))) ";
+  String ORDER = "order by u.username asc";
 
-  Slice<UserEntity> findByUsernameNot(@Nonnull String username,
-                                      @Nonnull Pageable pageable);
+  String ALL_USERS = SELECT_USER_WITH_STATUS + "left join " + PAIR_WITH_ME + "where u.id <> :me ";
+  String FRIENDS = SELECT_USER_WITH_STATUS + "join " + PAIR_WITH_ME +
+      "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.ACCEPTED ";
+  String INCOME_INVITATIONS = SELECT_USER_WITH_STATUS +
+      "join FriendshipEntity f on f.requester = u and f.addressee.id = :me " +
+      "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING ";
+  String OUTCOME_INVITATIONS = SELECT_USER_WITH_STATUS +
+      "join FriendshipEntity f on f.addressee = u and f.requester.id = :me " +
+      "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING ";
 
-  @Query("select u from UserEntity u where u.username <> :username" +
-          " and (u.username like %:searchQuery% or u.firstname like %:searchQuery% or u.surname like %:searchQuery%)")
-  Slice<UserEntity> findByUsernameNotAndSearchQuery(@Param("username") String username,
-                                                    @Nonnull Pageable pageable,
-                                                    @Param("searchQuery") String searchQuery);
+  Optional<UserEntity> findByUsername(String username);
 
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.addressee" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.ACCEPTED and f.requester = :requester")
-  Slice<UserEntity> findFriends(@Param("requester") UserEntity requester,
-                                @Nonnull Pageable pageable);
+  @Query(ALL_USERS + ORDER)
+  Page<UserWithStatus> findAllUsersWithFriendshipStatus(@Param("me") UUID me,
+                                                        Pageable pageable);
 
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.addressee" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.ACCEPTED and f.requester = :requester" +
-          " and (u.username like %:searchQuery% or u.firstname like %:searchQuery% or u.surname like %:searchQuery%)")
-  Slice<UserEntity> findFriends(@Param("requester") UserEntity requester,
-                                @Nonnull Pageable pageable,
-                                @Param("searchQuery") String searchQuery);
+  @Query(ALL_USERS + SEARCH + ORDER)
+  Page<UserWithStatus> findAllUsersWithFriendshipStatus(@Param("me") UUID me,
+                                                        @Param("searchQuery") String searchQuery,
+                                                        Pageable pageable);
 
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.addressee" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.ACCEPTED and f.requester = :requester")
-  List<UserEntity> findFriends(@Param("requester") UserEntity requester);
+  @Query(FRIENDS + ORDER)
+  Page<UserWithStatus> findFriends(@Param("me") UUID me,
+                                   Pageable pageable);
 
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.addressee" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.ACCEPTED and f.requester = :requester" +
-          " and (u.username like %:searchQuery% or u.firstname like %:searchQuery% or u.surname like %:searchQuery%)")
-  Slice<UserEntity> findFriends(@Param("requester") UserEntity requester,
-                                @Param("searchQuery") String searchQuery);
+  @Query(FRIENDS + SEARCH + ORDER)
+  Page<UserWithStatus> findFriends(@Param("me") UUID me,
+                                   @Param("searchQuery") String searchQuery,
+                                   Pageable pageable);
 
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.addressee" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.PENDING and f.requester = :requester")
-  Slice<UserEntity> findOutcomeInvitations(@Param("requester") UserEntity requester,
-                                           @Nonnull Pageable pageable);
-
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.addressee" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.PENDING and f.requester = :requester" +
-          " and (u.username like %:searchQuery% or u.firstname like %:searchQuery% or u.surname like %:searchQuery%)")
-  Slice<UserEntity> findOutcomeInvitations(@Param("requester") UserEntity requester,
-                                           @Nonnull Pageable pageable,
-                                           @Param("searchQuery") String searchQuery);
-
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.addressee" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.PENDING and f.requester = :requester")
-  List<UserEntity> findOutcomeInvitations(@Param("requester") UserEntity requester);
-
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.addressee" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.PENDING and f.requester = :requester" +
-          " and (u.username like %:searchQuery% or u.firstname like %:searchQuery% or u.surname like %:searchQuery%)")
-  List<UserEntity> findOutcomeInvitations(@Param("requester") UserEntity requester,
-                                          @Param("searchQuery") String searchQuery);
-
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.requester" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.PENDING and f.addressee = :addressee")
-  Slice<UserEntity> findIncomeInvitations(@Param("addressee") UserEntity addressee,
-                                          @Nonnull Pageable pageable);
-
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.requester" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.PENDING and f.addressee = :addressee" +
-          " and (u.username like %:searchQuery% or u.firstname like %:searchQuery% or u.surname like %:searchQuery%)")
-  Slice<UserEntity> findIncomeInvitations(@Param("addressee") UserEntity addressee,
-                                          @Nonnull Pageable pageable,
-                                          @Param("searchQuery") String searchQuery);
-
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.requester" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.PENDING and f.addressee = :addressee")
-  List<UserEntity> findIncomeInvitations(@Param("addressee") UserEntity addressee);
-
-  @Query("select u from UserEntity u join FriendshipEntity f on u = f.requester" +
-          " where f.status = data.io.student.rangiffler.FriendshipStatus.PENDING and f.addressee = :addressee" +
-          " and (u.username like %:searchQuery% or u.firstname like %:searchQuery% or u.surname like %:searchQuery%)")
-  List<UserEntity> findIncomeInvitations(@Param("addressee") UserEntity addressee,
-                                         @Param("searchQuery") String searchQuery);
-
+  // findOutcomeInvitations / findIncomeInvitations - аналогично, по OUTCOME_INVITATIONS / INCOME_INVITATIONS
 }
 ```
-  Обратите внимание, что вместо поля pending, здесь используется enum с двумя статусами `FriendshipStatus.PENDING`/`FriendshipStatus.ACCEPTED`.
+  Что здесь важно:
+- `:me` - UUID текущего пользователя. Сервис один раз находит его по `username` из JWT, дальше запросы сравнивают id, а не строки.
+- Связь с текущим пользователем ищется одним `join` по паре в любом направлении, а `isRequester` говорит, кто отправил заявку.
+  Из пары `friendshipStatus` + `isRequester` сервис вычисляет `FriendStatus` для фронта: `ACCEPTED` → `FRIEND`,
+  `PENDING` + `isRequester = true` → `INVITATION_SENT`, `PENDING` + `false` → `INVITATION_RECEIVED`, нет связи → `NOT_FRIEND`.
+- Страна пользователя приходит в той же строке (`join u.country c`) - без отдельного запроса на каждого пользователя (N+1).
+- Каждый запрос есть в двух вариантах - с поиском и без: `searchQuery` в JPQL обязателен, поэтому логика, какой из методов вызвать,
+  живет в сервисе, в зависимости от того, пришел ли с фронта `searchQuery`.
 
 ###### EntityProjection в JpaRepository  
 
-  В GQL схеме есть поле `isOwner: Boolean!` для того, что бы фотографии могли размечаться на свои / не свои. В идеале, делать это на уровне SQL (JPQL) запроса прямо в репозитории, для этого надо ввести промежуточный слой - интерфейс или класс, реализующий паттерн EntityProjection:
+  В GQL схеме есть поле `isOwner: Boolean!` для того, что бы фотографии могли размечаться на свои / не свои. В идеале, делать это на уровне SQL (JPQL)
+запроса прямо в репозитории, для этого надо ввести промежуточный слой - интерфейс или класс (record), реализующий паттерн EntityProjection.
+Record + `select new` вы уже видели в `UserRepository` выше, а вот вариант с интерфейсом:
 ```java
 
 public interface PhotoRepository extends JpaRepository<PhotoEntity, UUID> {
@@ -375,31 +417,32 @@ public interface PhotoRepository extends JpaRepository<PhotoEntity, UUID> {
 
     String getDescription();
 
-    java.util.Date getCreatedDate();
+    LocalDateTime getCreatedDate();
 
     boolean isOwner();
   }
 
   // только "свои" фото, если параметр user - текущий пользователь
   @Nonnull
-  Slice<PhotoEntity> findByUserOrderByCreatedDateDesc(@Nonnull UserEntity user,
-                                                      @Nonnull Pageable pageable);
+  Page<PhotoEntity> findByUserOrderByCreatedDateDesc(@Nonnull UserEntity user,
+                                                     @Nonnull Pageable pageable);
 
   //  "свои" и "чужие" фото, если в листе List<UserEntity> users есть текущий пользователь и его друзья. В результате будут объекты интерфеса FeedPhotoView с правильным признаком isOwner
   @Nonnull
   @Query("select p.id as id, p.photo as photo, p.country as country, p.description as description, p.createdDate as createdDate, " +
       "case when p.user.username = :username then true else false end as isOwner " +
       "from PhotoEntity p where p.user in :users order by p.createdDate desc")
-  Slice<FeedPhotoView> findFeedPhotos(@Param("users") @Nonnull List<UserEntity> users,
-                                      @Param("username") @Nonnull String username,
-                                      @Nonnull Pageable pageable);
+  Page<FeedPhotoView> findFeedPhotos(@Param("users") @Nonnull List<UserEntity> users,
+                                     @Param("username") @Nonnull String username,
+                                     @Nonnull Pageable pageable);
 }
   
   ```
+  Для дат используйте `java.time` (`LocalDateTime`, `LocalDate`), а не `java.util.Date`.
 
-###### Передача информации о пагинации по gRPC (для примера) между сервисами, возврат `Slice` из сервисов
+###### Передача информации о пагинации по gRPC (для примера) между сервисами, возврат `Slice`/`Page` из сервисов
 
-  Тут все просто. Вам с фронта приходят `int page, int size` + не забыть про третий опциональный парметр - `searchQuery`. 
+  Тут все просто. Вам с фронта приходят `page, size` + не забыть про третий опциональный парметр - `searchQuery`. 
 Тогда, к примеру, gRPC сообщение в сервис с пользователями будет таким:
 ```protobuf
 message UsersRequest {
@@ -413,40 +456,47 @@ message UsersResponse {
   boolean hasNext = 2;
 }
 ```
-  Тогда мы сможем вернуть на фронт созданный руками Slice
+  Тогда мы сможем вернуть на фронт созданный руками Slice (если по gRPC передавать еще и общее количество элементов - то `PageImpl`)
 ```java
-            List<UserGql> userGqlList = response.getUsersList()
+            List<User> users = response.getUsersList()
                     .stream()
-                    .map(UserGql::fromGrpcMessage)
+                    .map(UserMapper::fromGrpcMessage) // grpc-сообщение -> сгенерированный GraphQL-тип User
                     .toList();
-            return new SliceImpl<>(userGqlList, PageRequest.of(page, size), response.hasNext());
+            return new SliceImpl<>(users, PageRequest.of(page, size), response.hasNext());
 ```
 
-  Здесь объект `PageRequest.of(page, size)` - это изначальные параметры int page, int size, а `response.hasNext()` - получаем
-в самом микросервисе из объекта Slice, который вернет JpaRepository.
+  Здесь объект `PageRequest.of(page, size)` - это изначальные параметры page, size, а `response.hasNext()` - получаем
+в самом микросервисе из объекта Slice/Page, который вернет JpaRepository.
+Если ваши сервисы отдают `Slice`, а не `Page`, поменяйте `typeMapping` для `UserConnection`/`PhotoConnection` в `rfr-api/build.gradle`
+на `org.springframework.data.domain.Slice<...>` - Spring-graphql умеет строить Connection из обоих типов.
 
 ###### Security config
 
-   Для локального тестирования вы можете открыть доступ к antMatcher("/graphiql/**"):
+   Запросы `POST /graphql` пропускаются фильтрами без авторизации, а доступ проверяется на уровне контроллеров
+через `@PreAuthorize("isAuthenticated()")` (`@EnableMethodSecurity`). Для локального тестирования вы можете открыть страницу
+GraphiQL (`spring.graphql.graphiql.enabled: true` уже включен в `application.yml`):
 ```java
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        corsCustomizer.corsCustomizer(http);
-
-        http.authorizeHttpRequests(customizer ->
-                customizer.requestMatchers(antMatcher("/graphiql/**"))
-                        .permitAll()
-                        .anyRequest()
-                        .authenticated()
-        ).oauth2ResourceServer((oauth2) -> oauth2.jwt(Customizer.withDefaults()));
+        corsCustomizer.apply(http);
+        http.csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(customizer ->
+                customizer
+                    .requestMatchers(HttpMethod.POST, "/graphql").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/graphiql/**").permitAll()
+                    .anyRequest().authenticated()
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
         return http.build();
     }
 ```
+   Сами запросы из GraphiQL все равно потребуют токен - добавьте заголовок `Authorization: Bearer <id_token>` в разделе Headers
+(токен можно взять в `localStorage` фронта после логина).
 
-###### GraphQL контроллеры совместно с record
+###### GraphQL контроллеры и @SchemaMapping
 
-   Несмотря на то, что record - immutable тип без сеттеров, последние версии Spring-graphql корректно позволяют "наполнять" его данными с помощью
-`@SchemaMapping` Такис образом если клиент запрашивает:
+   Сгенерированные DGS Codegen классы (или ваши record'ы) можно "наполнять" данными по частям с помощью `@SchemaMapping`.
+Таким образом если клиент запрашивает:
 ```json
      query user {
      user {
@@ -470,22 +520,44 @@ message UsersResponse {
   То бэкенд соберет ему ответ вот так: 
 ```java
   @QueryMapping
-  public UserGql user(@AuthenticationPrincipal Jwt principal) {
-    return userService.currentUser(principal.getClaim("sub")); // Здесь будет null в полe friends
+  public User user(@AuthenticationPrincipal Jwt principal) {
+    return userService.createNewUserIfNotPresent(principal.getClaim("sub")); // Здесь будет null в полe friends
   }
-  
-    @SchemaMapping(typeName = "User", field = "friends") // будет вызван автоматически, т.к. в запросе фронт попросил friends
-    public Slice<UserGql> friends(UserGql user, @Argument int page, @Argument int size, @Argument @Nullable String searchQuery) {
-      // получит на вход UserGql user и добавит внутрь него Slice<UserGql> с друзьями
-      return userService.friends(
-              user.username(),
-              PageRequest.of(page, size),
-              searchQuery
-      );
-    }
-}
+
+  @SchemaMapping(typeName = "User", field = "friends") // будет вызван автоматически, т.к. в запросе фронт попросил friends
+  public Page<User> friends(User user,
+                            @Argument("page") @Nullable Integer page,
+                            @Argument("size") @Nullable Integer size,
+                            @Argument("searchQuery") @Nullable String searchQuery) {
+    // получит на вход User user и добавит внутрь него Page<User> с друзьями
+    return userService.friends(
+        user.getUsername(),
+        pageRequest(page, size),
+        searchQuery
+    );
+  }
 ```
   Таким образом, ни при каких обстоятельствах, вызывать явно в своем коде методы, аннотированные как `@SchemaMapping` - не нужно!
+
+###### Ошибки GraphQL
+
+  GraphQL отвечает HTTP 200 даже при ошибке - ошибка приходит в массиве `errors` ответа. Чтобы фронт мог показать пользователю
+понятный текст, а внутренние детали не утекали наружу, исключения классифицирует `GraphQlExceptionResolver`:
+
+| Исключение | `extensions.classification` |
+|---|---|
+| `ResourceNotFoundException` (нет пользователя, страны, фото) | `NOT_FOUND` |
+| `FriendshipActionException` (недопустимое действие с дружбой) | `BAD_REQUEST` |
+| `IllegalArgumentException` (невалидный UUID, неверные page/size) | `BAD_REQUEST` |
+| все остальное | `INTERNAL_ERROR` без деталей |
+
+  Фронт показывает текст ошибки в снэкбаре только для `BAD_REQUEST` и `NOT_FOUND` (`src/api/graphqlError.ts`). Придерживайтесь этого контракта
+и в своих сервисах - это удобно и для e2e-тестов: негативные сценарии проверяются по `classification` и `message`.
+
+###### Spring Boot 4
+
+- Spring Boot 4.1 использует Jackson 3: пакеты `tools.jackson.databind.*` вместо `com.fasterxml.jackson.databind.*`.
+- HQL в `@Query` проверяется только при старте приложения (нужна БД) - `./gradlew build` ошибки в запросах не поймает.
 
 ###### Контроль доступа:
 
@@ -502,7 +574,7 @@ message UsersResponse {
 @DisplayName("...")
 @Tag("...")
 @ApiLogin(user = @User(photos = @Photo(country = RUSSIA)))
-void exampleTest(UserGql createdUser) { ... }
+void exampleTest(User createdUser) { ... }
 
 @Test
 @DisplayName("...")
@@ -511,7 +583,7 @@ void exampleTest(UserGql createdUser) { ... }
         @Partner(status = FRIEND, photos = @Photo(country = CANADA, imageClasspath = "cat.jpeg")),
         @Partner(status = INCOME_INVITATION, photos = @Photo(country = CANADA, imageClasspath = "dog.jpeg")),
         @Partner(status = OUTCOME_INVITATION, photos = @Photo(country = AUSTRALIA, imageClasspath = "fish.jpeg"))}))
-void exampleTest2(UserGql createdUser) { ... }
+void exampleTest2(User createdUser) { ... }
 ```
 
 #### 7. Реализовать достаточное, на твой взгляд, покрытие e-2-e тестами
