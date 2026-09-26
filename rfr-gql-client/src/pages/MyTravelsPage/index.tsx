@@ -1,4 +1,4 @@
-import {Avatar, Box, Card, Chip, Container, Typography} from "@mui/material";
+import {Avatar, Box, Chip, Container, Typography} from "@mui/material";
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import {PhotoContainer} from "../../components/PhotoContainer";
 import {WorldMap} from "../../components/WorldMap";
@@ -11,6 +11,7 @@ import {formInitialState} from "../../components/PhotoModal/formValidate.ts";
 import {QueryErrorAlert} from "../../components/QueryErrorAlert";
 import {AddPhotoFab} from "../../components/AddPhotoFab";
 import {VisitedCountries} from "../../components/VisitedCountries";
+import {CollapsibleMapCard} from "../../components/CollapsibleMapCard";
 
 export const MyTravelsPage = () => {
     const [withFriends, setWithFriends] = useState(false);
@@ -58,9 +59,9 @@ export const MyTravelsPage = () => {
                 </Box>
                 <Toggle withMyFriends={withFriends} setWithMyFriends={setWithFriends}/>
             </Box>
-            <Card sx={{p: {xs: 1, md: 3}, mb: 2}}>
+            <CollapsibleMapCard>
                 <WorldMap data={stat} selectedCountry={countryFilter} onCountryClick={toggleCountryFilter}/>
-            </Card>
+            </CollapsibleMapCard>
             <Box ref={photosHeaderRef} sx={{display: "flex", alignItems: "center", flexWrap: "wrap", gap: 1.5, minHeight: 40, mb: 2, scrollMarginTop: 88}}>
                 <Typography variant="h5" component="h3" sx={{fontWeight: 700}}>
                     Photos
