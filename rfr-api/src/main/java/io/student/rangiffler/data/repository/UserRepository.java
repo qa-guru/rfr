@@ -16,12 +16,12 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   @Query(
       "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, u.country.id, " +
+          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
           "coalesce(f1.status, f2.status), " +
-          "case when f1.requester.username = :username then true " +
-          "     when f2.addressee.username = :username then false " +
+          "case when f2.status is not null then true " +
+          "     when f1.status is not null then false " +
           "     else null end) " +
-          "from UserEntity u " +
+          "from UserEntity u join u.country c " +
           "left join FriendshipEntity f1 on f1.requester = u and f1.addressee.username = :username " +
           "left join FriendshipEntity f2 on f2.addressee = u and f2.requester.username = :username " +
           "where u.username <> :username " +
@@ -32,12 +32,12 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   @Query(
       "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, u.country.id, " +
+          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
           "coalesce(f1.status, f2.status), " +
-          "case when f1.requester.username = :username then true " +
-          "     when f2.addressee.username = :username then false " +
+          "case when f2.status is not null then true " +
+          "     when f1.status is not null then false " +
           "     else null end) " +
-          "from UserEntity u " +
+          "from UserEntity u join u.country c " +
           "left join FriendshipEntity f1 on f1.requester = u and f1.addressee.username = :username " +
           "left join FriendshipEntity f2 on f2.addressee = u and f2.requester.username = :username " +
           "where u.username <> :username " +
@@ -52,9 +52,9 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   @Query(
       "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, u.country.id, " +
+          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
           "f.status, true) " +
-          "from UserEntity u " +
+          "from UserEntity u join u.country c " +
           "join FriendshipEntity f on u = f.addressee and f.requester.username = :username " +
           "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.ACCEPTED " +
           "order by u.username asc"
@@ -64,9 +64,9 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   @Query(
       "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, u.country.id, " +
+          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
           "f.status, true) " +
-          "from UserEntity u " +
+          "from UserEntity u join u.country c " +
           "join FriendshipEntity f on u = f.addressee and f.requester.username = :username " +
           "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.ACCEPTED " +
           "  and (lower(u.username) like lower(concat('%', :searchQuery, '%')) " +
@@ -80,9 +80,9 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   @Query(
       "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, u.country.id, " +
+          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
           "f.status, true) " +
-          "from UserEntity u " +
+          "from UserEntity u join u.country c " +
           "join FriendshipEntity f on u = f.addressee and f.requester.username = :username " +
           "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING " +
           "order by u.username asc"
@@ -92,9 +92,9 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   @Query(
       "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, u.country.id, " +
+          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
           "f.status, true) " +
-          "from UserEntity u " +
+          "from UserEntity u join u.country c " +
           "join FriendshipEntity f on u = f.addressee and f.requester.username = :username " +
           "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING " +
           "  and (lower(u.username) like lower(concat('%', :searchQuery, '%')) " +
@@ -108,9 +108,9 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   @Query(
       "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, u.country.id, " +
+          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
           "f.status, false) " +
-          "from UserEntity u " +
+          "from UserEntity u join u.country c " +
           "join FriendshipEntity f on u = f.requester and f.addressee.username = :username " +
           "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING " +
           "order by u.username asc"
@@ -120,9 +120,9 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   @Query(
       "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, u.country.id, " +
+          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
           "f.status, false) " +
-          "from UserEntity u " +
+          "from UserEntity u join u.country c " +
           "join FriendshipEntity f on u = f.requester and f.addressee.username = :username " +
           "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING " +
           "  and (lower(u.username) like lower(concat('%', :searchQuery, '%')) " +

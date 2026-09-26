@@ -1,6 +1,6 @@
 plugins {
-    id 'org.springframework.boot' version '4.0.2'
-    id 'com.netflix.dgs.codegen' version '8.3.0'
+    id 'org.springframework.boot' version '4.1.1'
+    id 'com.netflix.dgs.codegen' version '8.7.0'
 }
 
 group = 'io.student'
@@ -28,7 +28,7 @@ generateJava {
     typeMapping = [
         'UserConnection': 'org.springframework.data.domain.Page<io.student.rangiffler.model.types.User>',
         'PhotoConnection': 'org.springframework.data.domain.Page<io.student.rangiffler.model.types.Photo>',
-        'Date': 'java.time.LocalDateTime'
+        'Date': 'java.time.LocalDate'
     ]
     generatedSourcesDir = "${layout.buildDirectory.get().asFile}/generated/sources/dgs-codegen"
     language = 'JAVA'

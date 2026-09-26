@@ -1,4 +1,4 @@
-import {BrowserRouter, Route, Routes} from "react-router-dom";
+import {BrowserRouter, Route, Routes} from "react-router";
 import {RedirectPage} from "../../pages/Redirect";
 import {PrivateRoute} from "../PrivateRoute";
 import {AuthorizedPage} from "../../pages/Authorized";

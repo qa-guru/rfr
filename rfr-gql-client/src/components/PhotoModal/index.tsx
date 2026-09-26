@@ -1,16 +1,17 @@
 import {Box, Button, FormControl, Grid, InputLabel, MenuItem, Modal as MuiModal,
     OutlinedInput, Select, SelectChangeEvent, TextField, Typography} from "@mui/material";
-import {ChangeEvent, FormEvent, FC, useState, useEffect} from "react";
+import {ChangeEvent, FormEvent, FC, useState} from "react";
 import { ImageUpload } from "../ImageUpload";
-import { PhotoFormProps, formHasErrors, formInitialState, formValidate } from "./formValidate";
-import { useCountries } from "../../context/CountriesContext";
+import { PhotoFormField, PhotoFormProps, formHasErrors, formInitialState, formValidate } from "./formValidate";
+import { useCountries } from "../../context/useCountries";
 import { useCreatePhoto } from "../../hooks/useCreatePhoto";
 import {useUpdatePhoto} from "../../hooks/useUpdatePhoto";
-import { useSnackBar } from "../../context/SnackBarContext";
-import { MenuProps } from "../CountrySelect";
+import { useSnackBar } from "../../context/useSnackBar";
+import { MenuProps } from "../CountrySelect/menuProps";
+import { errorMessage } from "../../api/graphqlError";
 
 const style = {
-    position: 'absolute' as 'absolute',
+    position: 'absolute' as const,
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
@@ -29,28 +30,33 @@ interface PhotoModalInterface {
     };
     onClose: () => void;
     isEdit: boolean;
+    withFriends?: boolean;
 }
 
-export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit = false}) => {
+export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit = false, withFriends = false}) => {
     const {countries} = useCountries();
     const snackbar = useSnackBar();
     const {createPhoto} = useCreatePhoto({
-        onError: () => snackbar.showSnackBar("Can not create new post", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not create new post"), "error"),
         onCompleted: () => snackbar.showSnackBar("New post created", "success"),
+        withFriends,
     });
     const {updatePhoto} = useUpdatePhoto({
-        onError: () => snackbar.showSnackBar("Can not update post", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not update post"), "error"),
         onCompleted: () => snackbar.showSnackBar("Post updated", "success"),
     });
 
     const [formValues, setFormValues] = useState<PhotoFormProps>(modalState.formData ?? formInitialState);
+    const [prevFormData, setPrevFormData] = useState(modalState.formData);
 
-    useEffect(() => {
+    if (modalState.formData !== prevFormData) {
+        setPrevFormData(modalState.formData);
         setFormValues(modalState.formData ?? formInitialState);
-    }, [modalState.formData]);
+    }
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const {name, value} = event.target;
+        const {value} = event.target;
+        const name = event.target.name as PhotoFormField;
         setFormValues({
             ...formValues,
             [name]: {
@@ -66,7 +72,8 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
     };
 
     const handleSelectValueChange = (event: SelectChangeEvent<string>) => {
-        const {name, value} = event.target;
+        const {value} = event.target;
+        const name = event.target.name as PhotoFormField;
         setFormValues({
             ...formValues,
             [name]: {
@@ -97,7 +104,7 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
                 createPhoto({
                     variables: {
                         input: {
-                            src: formValues.src.value!!,
+                            src: formValues.src.value ?? "",
                             description: formValues.description.value,
                             country: {
                                 code: formValues.country.value,
@@ -107,8 +114,6 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
                 });
             }
             handleClose();
-        } else {
-
         }
     };
 
@@ -131,7 +136,7 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
                         </Typography>
                 }
                 <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                         {
                             isEdit ?
                                 <div
@@ -150,7 +155,7 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
                                         width={300}
                                         height={300}
                                         src={formValues.src.value}
-                                        alt={formValues.description.value ?? "Фото пользователя"}
+                                        alt={formValues.description.value ?? "User photo"}
                                     />
                                 </div>
                             :
@@ -167,7 +172,7 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
                                 }}/>
                         }
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                         <FormControl sx={{width: "100%"}}>
                             <InputLabel id="select-country-label">Country</InputLabel>
                             <Select
@@ -193,7 +198,7 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
                             </Select>
                         </FormControl>
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                         <TextField
                             id="description"
                             name="description"

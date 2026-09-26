@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {PeopleTable} from "..";
 import {useGetFriends} from "../../../hooks/useGetFriends";
+import {QueryErrorAlert} from "../../QueryErrorAlert";
 
 export const FriendsTable = () => {
     const [page, setPage] = useState(0);
@@ -11,13 +12,15 @@ export const FriendsTable = () => {
         setPage(0);
     }
 
-    const {data, hasNextPage, hasPreviousPage, refetch} = useGetFriends({page, search});
+    const {data, error, hasNextPage, hasPreviousPage, refetch} = useGetFriends({page, search});
 
     const onSearchSubmit = () => {
         refetch();
     }
 
     return (
+        <>
+        <QueryErrorAlert error={error} onRetry={() => refetch()}/>
         <PeopleTable
             data={data}
             page={page}
@@ -27,5 +30,6 @@ export const FriendsTable = () => {
             setSearch={handleInputSearch}
             onSearchSubmit={onSearchSubmit}
         />
+        </>
     )
 }

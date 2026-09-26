@@ -1,5 +1,5 @@
 import "./App.css";
-import {ApolloProvider} from "@apollo/client";
+import {ApolloProvider} from "@apollo/client/react";
 import {AppContent} from "./components/AppContent";
 import {apiClient} from "./api/apolloClient";
 import {SnackBarProvider} from "./context/SnackBarContext";

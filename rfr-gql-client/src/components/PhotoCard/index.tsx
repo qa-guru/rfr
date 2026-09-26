@@ -7,8 +7,9 @@ import {Photo} from '../../types/Photo';
 import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import {SessionContext} from '../../context/SessionContext';
 import {useDeletePhoto} from '../../hooks/useDeletePhoto';
-import {useSnackBar} from '../../context/SnackBarContext';
+import {useSnackBar} from '../../context/useSnackBar';
 import {useLikePhoto} from '../../hooks/useLikePhoto';
+import {errorMessage} from '../../api/graphqlError';
 
 interface PhotoCardInterface {
     photo: Photo;
@@ -24,14 +25,14 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick, withFrien
 
 
     const {deletePhoto} = useDeletePhoto({
-        onError: () => snackbar.showSnackBar("Can not delete post", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not delete post"), "error"),
         onCompleted: () => snackbar.showSnackBar("Post deleted", "success"),
         page,
         withFriends,
     });
 
     const {likePhoto} = useLikePhoto({
-        onError: () => snackbar.showSnackBar("Post was not liked", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Post was not liked"), "error"),
         onCompleted: () => snackbar.showSnackBar("Post was succesfully liked", "success"),
     });
 
@@ -49,7 +50,7 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick, withFrien
                 input: {
                     id: photo.id,
                     like: {
-                        user: user?.id!!,
+                        user: user?.id ?? "",
                     }
                 }
             }
@@ -63,7 +64,7 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick, withFrien
                 src={photo.src}
                 alt={photo.description}
             />
-            <Box paddingX={1.25}>
+            <Box sx={{paddingX: 1.25}}>
                 <Box
                     sx={{
                         display: "flex",
@@ -71,7 +72,7 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick, withFrien
                     }}
                 >
                     <FavoriteOutlinedIcon sx={{width: 15}}/>
-                    <Typography component="p" variant="body2" marginLeft={0.5}>
+                    <Typography component="p" variant="body2" sx={{marginLeft: 0.5}}>
                         {photo.likes.total} likes
                     </Typography>
                     <IconButton
@@ -83,7 +84,7 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick, withFrien
                         onClick={handleLikePhoto}
                     >
                         {
-                            photo.likes?.likes.some((el) => el.user === user?.id!!) ?
+                            photo.likes?.likes.some((el) => el.user === user?.id) ?
                                 <FavoriteOutlinedIcon/> :
                                 <FavoriteBorderOutlinedIcon/>
                         }

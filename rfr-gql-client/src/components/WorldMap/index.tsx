@@ -1,5 +1,5 @@
 import {FC} from 'react';
-import SvgWorldMap from 'react-svg-worldmap';
+import SvgWorldMap, {ISOCode} from 'react-svg-worldmap';
 import "./styles.css";
 
 type WorldMapData = {
@@ -15,7 +15,7 @@ interface WorldMapInterface {
 
 export const WorldMap: FC<WorldMapInterface> = ({data = []}) => {
     const mapData = data.map((v) => ({
-        country: v.country.code,
+        country: v.country.code as ISOCode,
         value: v.count,
     }));
 

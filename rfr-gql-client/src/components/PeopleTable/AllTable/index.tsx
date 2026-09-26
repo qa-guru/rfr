@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {PeopleTable} from ".."
 import {useQueryPeople} from "../../../hooks/useQueryPeople";
+import {QueryErrorAlert} from "../../QueryErrorAlert";
 
 export const AllTable = () => {
     const [page, setPage] = useState(0);
@@ -11,13 +12,15 @@ export const AllTable = () => {
         setPage(0);
     }
 
-    const {data, hasNextPage, hasPreviousPage, refetch} = useQueryPeople({page, search});
+    const {data, error, hasNextPage, hasPreviousPage, refetch} = useQueryPeople({page, search});
 
     const onSearchSubmit = () => {
         refetch();
     }
 
     return (
+        <>
+        <QueryErrorAlert error={error} onRetry={() => refetch()}/>
         <PeopleTable
             data={data}
             page={page}
@@ -27,5 +30,6 @@ export const AllTable = () => {
             onSearchSubmit={onSearchSubmit}
             setSearch={handleInputSearch}
         />
+        </>
     )
 }

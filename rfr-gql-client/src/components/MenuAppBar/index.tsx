@@ -9,7 +9,7 @@ import {Sidebar} from '../Sidebar';
 import {FC} from 'react';
 import {apiClient} from '../../api/apolloClient';
 import {getLogoutLink, idTokenFromLocalStorage} from '../../api/authUtils';
-import {Link} from 'react-router-dom';
+import {Link} from 'react-router';
 import './styles.css';
 
 interface MenuAppBarInterface {

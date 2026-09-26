@@ -82,6 +82,7 @@ public class RegisterController {
     BeanPropertyBindingResult errorResult = (BeanPropertyBindingResult) model.getAttribute(REG_MODEL_ERROR_BEAN_NAME);
     if (errorResult == null) {
       errorResult = new BeanPropertyBindingResult(registrationForm, "registrationForm");
+      model.addAttribute(REG_MODEL_ERROR_BEAN_NAME, errorResult);
     }
     errorResult.addError(new FieldError("registrationForm", fieldName, error));
   }

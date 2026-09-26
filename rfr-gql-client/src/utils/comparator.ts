@@ -10,7 +10,7 @@ function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
     return 0;
 }
 
-export function getComparator<Key extends keyof any>(
+export function getComparator<Key extends PropertyKey>(
     order: Order,
     orderBy: Key,
 ): (

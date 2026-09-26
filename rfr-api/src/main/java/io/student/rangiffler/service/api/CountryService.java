@@ -7,4 +7,6 @@ import java.util.List;
 public interface CountryService {
 
   List<Country> getAllCountries();
+
+  Country getByCode(String code);
 }

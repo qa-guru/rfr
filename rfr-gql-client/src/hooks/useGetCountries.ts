@@ -1,4 +1,10 @@
-import {gql, useQuery} from "@apollo/client";
+import {gql} from "@apollo/client";
+import {useQuery} from "@apollo/client/react";
+import {Country} from "../types/Country";
+
+type GetCountriesData = {
+    countries: Country[];
+};
 
 const GET_COUNTRIES = gql(`
     query GetCountries {
@@ -11,7 +17,7 @@ const GET_COUNTRIES = gql(`
 `);
 
 export const useGetCountries = () => {
-    const {data, loading, error, refetch} = useQuery(GET_COUNTRIES);
+    const {data, loading, error, refetch} = useQuery<GetCountriesData>(GET_COUNTRIES);
     return {
         data,
         loading,

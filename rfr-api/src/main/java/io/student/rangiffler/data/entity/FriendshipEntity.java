@@ -9,13 +9,11 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Getter
@@ -36,8 +34,7 @@ public class FriendshipEntity {
   private UserEntity addressee;
 
   @Column
-  @Temporal(TemporalType.TIMESTAMP)
-  private Date createdDate;
+  private LocalDateTime createdDate;
 
   @Column
   @Enumerated(EnumType.STRING)
@@ -52,12 +49,11 @@ public class FriendshipEntity {
     if (thisEffectiveClass != oEffectiveClass) return false;
     FriendshipEntity that = (FriendshipEntity) o;
     return getRequester() != null && Objects.equals(getRequester(), that.getRequester())
-        && getAddressee() != null && Objects.equals(getAddressee(), that.getAddressee())
-        && getCreatedDate() != null && Objects.equals(getCreatedDate(), that.getCreatedDate());
+        && getAddressee() != null && Objects.equals(getAddressee(), that.getAddressee());
   }
 
   @Override
   public final int hashCode() {
-    return Objects.hash(requester, addressee, createdDate);
+    return Objects.hash(requester, addressee);
   }
 }

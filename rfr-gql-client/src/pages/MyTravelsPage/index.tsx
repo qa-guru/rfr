@@ -4,13 +4,14 @@ import {WorldMap} from "../../components/WorldMap";
 import {Toggle} from "../../components/Toggle";
 import {useState} from "react";
 import {useGetFeed} from "../../hooks/useGetFeed";
-import {useDialog} from "../../context/DialogContext.tsx";
+import {useDialog} from "../../context/useDialog.ts";
 import {formInitialState} from "../../components/PhotoModal/formValidate.ts";
+import {QueryErrorAlert} from "../../components/QueryErrorAlert";
 
 export const MyTravelsPage = () => {
     const [withFriends, setWithFriends] = useState(false);
     const [page, setPage] = useState(0);
-    const {photos, stat, hasNextPage, hasPreviousPage, loading, fetchMore} = useGetFeed({page, withFriends});
+    const {photos, stat, hasNextPage, hasPreviousPage, loading, error, refetch, fetchMore} = useGetFeed({page, withFriends});
 
     const dialog = useDialog();
 
@@ -18,6 +19,7 @@ export const MyTravelsPage = () => {
         dialog.showDialog({
             title: "Add photo",
             isEdit: false,
+            withFriends,
             formData: {...formInitialState,},
         });
     };
@@ -26,7 +28,7 @@ export const MyTravelsPage = () => {
         fetchMore({
             variables: {
                 page: page + 1,
-                size: 10,
+                size: 12,
                 withFriends,
             },
         });
@@ -37,7 +39,7 @@ export const MyTravelsPage = () => {
         fetchMore({
             variables: {
                 page: page - 1,
-                size: 10,
+                size: 12,
                 withFriends,
             },
         });
@@ -86,6 +88,7 @@ export const MyTravelsPage = () => {
                     </Button>
                 </Box>
             </Box>
+            <QueryErrorAlert error={error} fallback="Can not load travels" onRetry={() => refetch()}/>
             <PhotoContainer
                 withFriends={withFriends}
                 loading={loading}

@@ -1,13 +1,11 @@
 import * as React from 'react';
 import {
     ChangeEvent,
-    createContext,
     FC,
     FormEvent,
     forwardRef,
     ReactElement,
     ReactNode,
-    useContext,
     useState
 } from 'react';
 import DialogMui from "@mui/material/Dialog";
@@ -28,12 +26,20 @@ import {
     TextField
 } from "@mui/material";
 import {ImageUpload} from "../components/ImageUpload";
-import {formHasErrors, formInitialState, formValidate, PhotoFormProps} from "../components/PhotoModal/formValidate.ts";
-import {MenuProps} from "../components/CountrySelect";
-import {useCountries} from "./CountriesContext.tsx";
+import {
+    formHasErrors,
+    formInitialState,
+    formValidate,
+    PhotoFormField,
+    PhotoFormProps
+} from "../components/PhotoModal/formValidate.ts";
+import {MenuProps} from "../components/CountrySelect/menuProps.ts";
+import {useCountries} from "./useCountries.ts";
 import {useCreatePhoto} from "../hooks/useCreatePhoto.ts";
-import {useSnackBar} from "./SnackBarContext.tsx";
+import {useSnackBar} from "./useSnackBar.ts";
+import {DialogContext, DialogDataInterface} from "./useDialog.ts";
 import {useUpdatePhoto} from "../hooks/useUpdatePhoto.ts";
+import {errorMessage} from "../api/graphqlError.ts";
 
 const Transition = forwardRef(function Transition(
     props: TransitionProps & {
@@ -43,19 +49,6 @@ const Transition = forwardRef(function Transition(
 ) {
     return <Slide direction="up" ref={ref} {...props} />;
 });
-
-interface DialogDataInterface {
-    title: string,
-    formData: PhotoFormProps,
-    isEdit: boolean,
-    withFriends: boolean,
-}
-
-interface DialogContextActions {
-    showDialog: (dialogData: DialogDataInterface) => void;
-}
-
-const DialogContext = createContext({} as DialogContextActions);
 
 interface DialogContextProps {
     children: ReactNode;
@@ -69,13 +62,13 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
     const snackbar = useSnackBar();
 
     const {createPhoto} = useCreatePhoto({
-        onError: () => snackbar.showSnackBar("Can not create new post", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not create new post"), "error"),
         onCompleted: () => snackbar.showSnackBar("New post created", "success"),
-        withFriends: dialogData?.withFriends,
+        withFriends: dialogData?.withFriends ?? false,
     });
 
     const {updatePhoto} = useUpdatePhoto({
-        onError: () => snackbar.showSnackBar("Can not update post", "error"),
+        onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not update post"), "error"),
         onCompleted: () => snackbar.showSnackBar("Post updated", "success"),
     });
 
@@ -134,7 +127,8 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
     }
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const {name, value} = event.target;
+        const {value} = event.target;
+        const name = event.target.name as PhotoFormField;
         setFormValues({
             ...formValues,
             [name]: {
@@ -145,7 +139,8 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
     };
 
     const handleSelectValueChange = (event: SelectChangeEvent<string>) => {
-        const {name, value} = event.target;
+        const {value} = event.target;
+        const name = event.target.name as PhotoFormField;
         setFormValues({
             ...formValues,
             [name]: {
@@ -160,7 +155,7 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
             {children}
             <DialogMui
                 open={open}
-                TransitionComponent={Transition}
+                slots={{transition: Transition}}
                 keepMounted
                 onClose={handleClose}
                 aria-describedby="alert-dialog-slide-description"
@@ -169,7 +164,7 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
                 <DialogContent sx={{display: "flex", alignItems: "center"}}>
                     <Grid container spacing={2} component="form" noValidate
                           onSubmit={dialogData?.isEdit ? handleUpdate : handleCreate}>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <ImageUpload
                                 buttonText="Upload new image"
                                 file={formValues.src.value}
@@ -184,7 +179,7 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
                                     })
                                 }}/>
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <FormControl sx={{width: "100%"}}>
                                 <InputLabel id="select-country-label">Country</InputLabel>
                                 <Select
@@ -210,7 +205,7 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
                                 </Select>
                             </FormControl>
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <TextField
                                 id="description"
                                 name="description"
@@ -244,14 +239,4 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
     );
 };
 
-const useDialog = (): DialogContextActions => {
-    const context = useContext(DialogContext);
-
-    if (!context) {
-        throw new Error('useDialog must be used within an DialogProvider');
-    }
-
-    return context;
-};
-
-export {DialogProvider, useDialog};
+export {DialogProvider};
