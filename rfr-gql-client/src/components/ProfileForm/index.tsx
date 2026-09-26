@@ -97,10 +97,10 @@ export const ProfileForm = () => {
             onSubmit={onSubmit}
             spacing={0}
             sx={{
-                marginTop: 5,
+                rowGap: 4,
             }}
         >
-            <Grid size={4} sx={{
+            <Grid size={{xs: 12, md: 4}} sx={{
                 display: "flex",
                 justifyContent: "center",
             }}>
@@ -119,7 +119,7 @@ export const ProfileForm = () => {
                         })
                     }}/>
             </Grid>
-            <Grid size={8}>
+            <Grid size={{xs: 12, md: 8}}>
                 <Typography
                     variant="h4"
                     component="h2"
@@ -133,7 +133,7 @@ export const ProfileForm = () => {
                     container
                     spacing={3}
                 >
-                    <Grid size={6}>
+                    <Grid size={{xs: 12, sm: 6}}>
                         <TextField
                             id="firstname"
                             name="firstname"
@@ -146,7 +146,7 @@ export const ProfileForm = () => {
                             fullWidth
                         />
                     </Grid>
-                    <Grid size={6}>
+                    <Grid size={{xs: 12, sm: 6}}>
                         <TextField
                             id="surname"
                             name="surname"

@@ -1,8 +1,8 @@
-import {Box, Button, Grid, Typography} from "@mui/material";
+import {Box, Button, Card, Divider, Typography} from "@mui/material";
 import deerLogo from "./../../assets/deer-logo.svg";
 import "./styles.css";
 import {Navigate} from "react-router";
-import {initLocalStorageAndRedirectToAuth} from "../../api/authUtils";
+import {getRegisterLink, initLocalStorageAndRedirectToAuth} from "../../api/authUtils";
 import {Loader} from "../../components/Loader";
 import {useGetUser} from "../../hooks/useGetUser";
 
@@ -21,53 +21,44 @@ export const LandingPage = () => {
                 ) :
                 (
                     <Box className="landing__wrapper">
-                        <Grid
-                            container
-                            spacing={0}
-                            className="landing__container"
-                            sx={{width: "70%"}}>
-                            <Grid size={6} className="landing__hero">
-                            </Grid>
-                            <Grid size={6} className="landing__content">
-                                <Typography
-                                    variant="h3"
-                                    component="h2"
-                                    sx={{
-                                        fontWeight: "bold",
-                                        margin: 2,
-                                    }}
-                                    className="landing__header">
-                                    <span className="landing__header-accent">R</span>angiffler
+                        <Card className="landing__container" sx={{borderRadius: {xs: 0, sm: "16px"}, border: {xs: 0, sm: 1}, borderColor: {sm: "divider"}}}>
+                            <Box className="landing__hero"/>
+                            <Box className="landing__content">
+                                <Typography variant="h4" component="h2" className="landing__header">
+                                    <Box
+                                        component="span"
+                                        className="landing__logo"
+                                        role="img"
+                                        aria-label="Rangiffler logo"
+                                        sx={{maskImage: `url("${deerLogo}")`, WebkitMaskImage: `url("${deerLogo}")`}}
+                                    />
+                                    <span><Box component="span" sx={{color: "primary.main"}}>R</Box>angiffler</span>
                                 </Typography>
-                                <img className="landing__logo"
-                                     src={deerLogo}
-                                     width="90"
-                                     alt="Rangiffler logo"/>
-                                <Box sx={{margin: 2}}>
-                                    <Typography>
-                                        Share your best places with Rangiffler
-                                    </Typography>
-                                    <Button
-                                        variant="contained"
-                                        className="landing__content-button"
-                                        sx={{margin: 2, marginBottom: 4}}
-                                        onClick={onLoginClick}
-                                    >Login
-                                    </Button>
-                                    <Typography>
-                                        If you don't have account, we're waiting for you to join our journey
-                                    </Typography>
-                                    <Button
-                                        variant="outlined"
-                                        className="landing__content-button"
-                                        sx={{margin: 2}}
-                                        component="a"
-                                        href={`${import.meta.env.VITE_AUTH_URL}/register`}>
-                                        Register
-                                    </Button>
-                                </Box>
-                            </Grid>
-                        </Grid>
+                                <Typography sx={{color: "text.secondary", mt: 0.5, mb: 4}}>
+                                    Share your best places with Rangiffler
+                                </Typography>
+                                <Button
+                                    variant="contained"
+                                    size="large"
+                                    fullWidth
+                                    onClick={onLoginClick}
+                                >
+                                    Login
+                                </Button>
+                                <Divider sx={{my: 3, color: "text.secondary", fontSize: 13}}>New here?</Divider>
+                                <Typography variant="body2" sx={{color: "text.secondary", mb: 2, textAlign: "center"}}>
+                                    If you don't have account, we're waiting for you to join our journey
+                                </Typography>
+                                <Button
+                                    variant="outlined"
+                                    size="large"
+                                    fullWidth
+                                    component="a"
+                                    href={getRegisterLink()}>
+                                    Register
+                                </Button>
+                            </Box>
+                        </Card>
                     </Box>
                 )
     );

@@ -38,7 +38,7 @@ export const PrivateRoute = () => {
                                 <Box component="main" sx={{
                                     height: 100,
                                     flexGrow: 1,
-                                    p: 3,
+                                    p: {xs: 1.5, sm: 3},
                                     marginLeft: sidebarState ? `${drawerWidth}px` : 7,
                                 }}>
                                     <DrawerHeader/>

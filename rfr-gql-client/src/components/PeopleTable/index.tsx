@@ -1,4 +1,18 @@
-import {Avatar, Box, Table, TableBody, TableCell, TableContainer, TableRow, Typography, useTheme} from "@mui/material";
+import {
+    Avatar,
+    Box,
+    Card,
+    Divider,
+    Stack,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableRow,
+    Typography,
+    useMediaQuery,
+    useTheme
+} from "@mui/material";
 import {HeadCell} from "../Table/HeadCell";
 import {TableHead} from "../Table/TableHead";
 import {TablePagination} from "../Table/Pagination";
@@ -51,6 +65,15 @@ interface PeopleTableInterface {
     onSearchSubmit: () => void;
 }
 
+const Location: FC<{ user: User }> = ({user}) => (
+    <Box component="span" sx={{display: "inline-flex", alignItems: "center", gap: 1}}>
+        <img width={20} src={user.location?.flag ?? ""} alt=""/>
+        {user.location?.name}
+    </Box>
+);
+
+const fullName = (user: User) => [user.firstname, user.surname].filter(Boolean).join(" ");
+
 export const PeopleTable: FC<PeopleTableInterface> = ({
                                                           data,
                                                           page,
@@ -60,92 +83,67 @@ export const PeopleTable: FC<PeopleTableInterface> = ({
                                                           setSearch,
                                                           onSearchSubmit
                                                       }) => {
-
     const theme = useTheme();
+    const compact = useMediaQuery(theme.breakpoints.down("md"));
 
     return (
-        <TableContainer>
+        <Card>
             <TableToolbar setSearch={setSearch} onSearchSubmit={onSearchSubmit}/>
-            <>
-                <Table sx={{minWidth: 750, marginTop: 2}}
-                       aria-labelledby="tableTitle"
-                >
-                    <TableHead headCells={headCells}/>
-                    {data?.length > 0 && (
+            {data?.length > 0 && (compact ? (
+                <Stack divider={<Divider/>} sx={{borderTop: 1, borderColor: "divider"}}>
+                    {data.map((row: User) => (
+                        <Box key={row.id} sx={{display: "flex", alignItems: "center", gap: 2, px: 2, py: 1.5, flexWrap: "wrap"}}>
+                            <Avatar src={row.avatar} sx={{width: 44, height: 44}}/>
+                            <Box sx={{flex: 1, minWidth: 140}}>
+                                <Typography sx={{fontWeight: 600}}>{row.username}</Typography>
+                                <Typography variant="body2" sx={{color: "text.secondary"}}>
+                                    {fullName(row) || "---"}
+                                </Typography>
+                                <Typography variant="body2" sx={{color: "text.secondary", mt: 0.25}}>
+                                    <Location user={row}/>
+                                </Typography>
+                            </Box>
+                            <ActionButtons userId={row.id} friendStatus={row.friendStatus}/>
+                        </Box>
+                    ))}
+                </Stack>
+            ) : (
+                <TableContainer>
+                    <Table aria-labelledby="tableTitle">
+                        <TableHead headCells={headCells}/>
                         <TableBody>
-                            {data.map((row: User) => {
-                                return (
-                                    <TableRow
-                                        hover
-                                        tabIndex={-1}
-                                        key={row.id}
-                                    >
-                                        <TableCell
-                                            component="th"
-                                            scope="row"
-                                            sx={{
-                                                paddingTop: 0,
-                                                paddingBottom: 0,
-                                            }}
-                                        >
+                            {data.map((row: User) => (
+                                    <TableRow key={row.id} hover tabIndex={-1}>
+                                        <TableCell component="th" scope="row" sx={{py: 1}}>
                                             <Avatar src={row.avatar}/>
                                         </TableCell>
-                                        <TableCell>{row.username}</TableCell>
+                                        <TableCell sx={{fontWeight: 600}}>{row.username}</TableCell>
                                         <TableCell>{row.firstname ?? "---"}</TableCell>
                                         <TableCell>{row.surname ?? "---"}</TableCell>
-                                        <TableCell>
-                                            <img width={20} src={row.location?.flag ?? ""}
-                                                 alt={row.location?.name}/> {row.location?.name}
-                                        </TableCell>
-                                        <TableCell align="right" sx={{
-                                            maxWidth: "150px"
-                                        }}>
+                                        <TableCell><Location user={row}/></TableCell>
+                                        <TableCell align="right">
                                             <ActionButtons userId={row.id} friendStatus={row.friendStatus}/>
                                         </TableCell>
                                     </TableRow>
-                                );
-                            })}
-                        </TableBody>)
-                    }
-                </Table>
-                {!data?.length && (
-                    <Box sx={{
-                        textAlign: "center",
-                        width: "100%",
-                        marginTop: 14,
-                        marginBottom: 12,
-                        color: theme.palette.primary.main,
-                    }}>
-                        <Typography
-                            variant="h6"
-                            component="p"
-                            sx={{
-                                fontWeight: 400,
-                            }}
-                        >
-                            There are no users yet
-                        </Typography>
-                        <Box sx={{
-                            width: 130,
-                            height: 130,
-                            margin: "0 auto",
-                        }}>
-                            <PeopleOutlineOutlinedIcon sx={{
-                                width: "100%",
-                                height: "100%",
-                                padding: 4,
-                                color: theme.palette.secondary.main,
-                            }}/>
-                        </Box>
-                    </Box>
-                )}
-                <TablePagination
-                    onPreviousClick={() => setPage(page - 1)}
-                    onNextClick={() => setPage(page + 1)}
-                    hasPreviousValues={hasPreviousPage}
-                    hasNextValues={hasNextPage}
-                />
-            </>
-        </TableContainer>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            ))}
+            {!data?.length && (
+                <Box sx={{textAlign: "center", py: 10, px: 3, borderTop: 1, borderColor: "divider"}}>
+                    <PeopleOutlineOutlinedIcon sx={{fontSize: 72, color: "primary.main", opacity: 0.6}}/>
+                    <Typography variant="h6" component="p" sx={{mt: 2}}>
+                        There are no users yet
+                    </Typography>
+                </Box>
+            )}
+            <TablePagination
+                onPreviousClick={() => setPage(page - 1)}
+                onNextClick={() => setPage(page + 1)}
+                hasPreviousValues={hasPreviousPage}
+                hasNextValues={hasNextPage}
+            />
+        </Card>
     )
 }

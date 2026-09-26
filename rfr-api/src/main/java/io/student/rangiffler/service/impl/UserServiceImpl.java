@@ -6,6 +6,7 @@ import io.student.rangiffler.data.entity.FriendshipStatus;
 import io.student.rangiffler.data.entity.UserEntity;
 import io.student.rangiffler.data.projection.UserWithStatus;
 import io.student.rangiffler.data.repository.CountryRepository;
+import io.student.rangiffler.data.repository.FriendshipRepository;
 import io.student.rangiffler.data.repository.UserRepository;
 import io.student.rangiffler.exception.FriendshipActionException;
 import io.student.rangiffler.exception.ResourceNotFoundException;
@@ -18,27 +19,30 @@ import io.student.rangiffler.service.api.UserService;
 import io.student.rangiffler.util.BytesAsString;
 import io.student.rangiffler.util.StringAsBytes;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Service
 public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
   private final CountryRepository countryRepository;
+  private final FriendshipRepository friendshipRepository;
 
   @Autowired
   public UserServiceImpl(UserRepository userRepository,
-                         CountryRepository countryRepository) {
+                         CountryRepository countryRepository,
+                         FriendshipRepository friendshipRepository) {
     this.userRepository = userRepository;
     this.countryRepository = countryRepository;
+    this.friendshipRepository = friendshipRepository;
   }
 
   @Override
@@ -66,40 +70,40 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional(readOnly = true)
   public Page<User> allUsers(String username, Pageable pageable, String searchQuery) {
-    return (searchQuery != null && !searchQuery.isBlank())
-        ? userRepository.findAllUsersWithFriendshipStatus(username, searchQuery, pageable)
-        .map(this::toUserFromProjection)
-        : userRepository.findAllUsersWithFriendshipStatus(username, pageable)
+    UUID me = getRequiredUser(username).getId();
+    return (hasText(searchQuery)
+        ? userRepository.findAllUsersWithFriendshipStatus(me, searchQuery, pageable)
+        : userRepository.findAllUsersWithFriendshipStatus(me, pageable))
         .map(this::toUserFromProjection);
   }
 
   @Override
   @Transactional(readOnly = true)
   public Page<User> friends(String username, Pageable pageable, String searchQuery) {
-    return (searchQuery != null && !searchQuery.isBlank())
-        ? userRepository.findFriends(username, searchQuery, pageable)
-        .map(this::toUserFromProjection)
-        : userRepository.findFriends(username, pageable)
+    UUID me = getRequiredUser(username).getId();
+    return (hasText(searchQuery)
+        ? userRepository.findFriends(me, searchQuery, pageable)
+        : userRepository.findFriends(me, pageable))
         .map(this::toUserFromProjection);
   }
 
   @Override
   @Transactional(readOnly = true)
   public Page<User> incomeInvitations(String username, Pageable pageable, String searchQuery) {
-    return (searchQuery != null && !searchQuery.isBlank())
-        ? userRepository.findIncomeInvitations(username, searchQuery, pageable)
-        .map(this::toUserFromProjection)
-        : userRepository.findIncomeInvitations(username, pageable)
+    UUID me = getRequiredUser(username).getId();
+    return (hasText(searchQuery)
+        ? userRepository.findIncomeInvitations(me, searchQuery, pageable)
+        : userRepository.findIncomeInvitations(me, pageable))
         .map(this::toUserFromProjection);
   }
 
   @Override
   @Transactional(readOnly = true)
   public Page<User> outcomeInvitations(String username, Pageable pageable, String searchQuery) {
-    return (searchQuery != null && !searchQuery.isBlank())
-        ? userRepository.findOutcomeInvitations(username, searchQuery, pageable)
-        .map(this::toUserFromProjection)
-        : userRepository.findOutcomeInvitations(username, pageable)
+    UUID me = getRequiredUser(username).getId();
+    return (hasText(searchQuery)
+        ? userRepository.findOutcomeInvitations(me, searchQuery, pageable)
+        : userRepository.findOutcomeInvitations(me, pageable))
         .map(this::toUserFromProjection);
   }
 
@@ -134,20 +138,14 @@ public class UserServiceImpl implements UserService {
     UserEntity currentUser = getRequiredUser(username);
     UserEntity friend = getTargetUser(currentUser, friendId);
 
-    Optional<FriendshipEntity> outgoing = outgoingFriendship(currentUser, friend);
-    Optional<FriendshipEntity> incoming = incomingFriendship(currentUser, friend);
-    if (Stream.of(outgoing, incoming).flatMap(Optional::stream)
-        .anyMatch(fe -> fe.getStatus() == FriendshipStatus.ACCEPTED)) {
-      throw new FriendshipActionException("Already friends");
+    friendshipRepository.findPair(currentUser.getId(), friend.getId()).ifPresent(existing -> {
+      throw new FriendshipActionException(existingPairMessage(existing, currentUser));
+    });
+    try {
+      friendshipRepository.saveAndFlush(FriendshipEntity.request(currentUser, friend));
+    } catch (DataIntegrityViolationException e) {
+      throw new FriendshipActionException("Friendship with this user already exists, please reload");
     }
-    if (outgoing.isPresent()) {
-      throw new FriendshipActionException("Invitation already sent");
-    }
-    if (incoming.isPresent()) {
-      throw new FriendshipActionException("There is already an incoming invitation from this user");
-    }
-
-    currentUser.addFriends(FriendshipStatus.PENDING, friend);
 
     return toUser(friend, FriendStatus.INVITATION_SENT);
   }
@@ -158,10 +156,10 @@ public class UserServiceImpl implements UserService {
     UserEntity currentUser = getRequiredUser(username);
     UserEntity inviteUser = getTargetUser(currentUser, friendId);
 
-    FriendshipEntity invite = requirePendingInvitation(currentUser, inviteUser);
-
-    invite.setStatus(FriendshipStatus.ACCEPTED);
-    currentUser.addFriends(FriendshipStatus.ACCEPTED, inviteUser);
+    friendshipRepository.findPair(currentUser.getId(), inviteUser.getId())
+        .orElseThrow(() -> new FriendshipActionException(FriendshipEntity.NO_PENDING_INVITATION))
+        .accept(currentUser);
+    flushFriendshipChange();
 
     return toUser(inviteUser, FriendStatus.FRIEND);
   }
@@ -172,8 +170,12 @@ public class UserServiceImpl implements UserService {
     UserEntity currentUser = getRequiredUser(username);
     UserEntity friendToDecline = getTargetUser(currentUser, friendId);
 
-    requirePendingInvitation(currentUser, friendToDecline);
-    currentUser.removeInvites(friendToDecline);
+    FriendshipEntity invitation = friendshipRepository.findPair(currentUser.getId(), friendToDecline.getId())
+        .orElseThrow(() -> new FriendshipActionException(FriendshipEntity.NO_PENDING_INVITATION));
+    invitation.assertCanDecline(currentUser);
+    friendshipRepository.delete(invitation);
+    flushFriendshipChange();
+
     return toUser(friendToDecline, FriendStatus.NOT_FRIEND);
   }
 
@@ -183,11 +185,11 @@ public class UserServiceImpl implements UserService {
     UserEntity currentUser = getRequiredUser(username);
     UserEntity friend = getTargetUser(currentUser, friendId);
 
-    if (outgoingFriendship(currentUser, friend).isEmpty() && incomingFriendship(currentUser, friend).isEmpty()) {
-      throw new FriendshipActionException("No friendship or invitation with this user");
-    }
-    currentUser.removeFriends(friend);
-    currentUser.removeInvites(friend);
+    FriendshipEntity friendship = friendshipRepository.findPair(currentUser.getId(), friend.getId())
+        .orElseThrow(() -> new FriendshipActionException("No friendship or invitation with this user"));
+    friendshipRepository.delete(friendship);
+    flushFriendshipChange();
+
     return toUser(friend, FriendStatus.NOT_FRIEND);
   }
 
@@ -264,22 +266,25 @@ public class UserServiceImpl implements UserService {
     return getRequiredUser(targetId);
   }
 
-  private Optional<FriendshipEntity> outgoingFriendship(UserEntity currentUser, UserEntity target) {
-    return currentUser.getFriendshipRequests().stream()
-        .filter(fe -> fe.getAddressee().getId().equals(target.getId()))
-        .findFirst();
+  private void flushFriendshipChange() {
+    try {
+      friendshipRepository.flush();
+    } catch (OptimisticLockingFailureException e) {
+      throw new FriendshipActionException("Friendship was changed by another action, please reload");
+    }
   }
 
-  private Optional<FriendshipEntity> incomingFriendship(UserEntity currentUser, UserEntity target) {
-    return currentUser.getFriendshipAddressees().stream()
-        .filter(fe -> fe.getRequester().getId().equals(target.getId()))
-        .findFirst();
+  private static String existingPairMessage(FriendshipEntity existing, UserEntity currentUser) {
+    if (existing.isAccepted()) {
+      return "Already friends";
+    }
+    return existing.isRequester(currentUser)
+        ? "Invitation already sent"
+        : "There is already an incoming invitation from this user";
   }
 
-  private FriendshipEntity requirePendingInvitation(UserEntity currentUser, UserEntity requester) {
-    return incomingFriendship(currentUser, requester)
-        .filter(fe -> fe.getStatus() == FriendshipStatus.PENDING)
-        .orElseThrow(() -> new FriendshipActionException("No pending invitation from this user"));
+  private static boolean hasText(String value) {
+    return value != null && !value.isBlank();
   }
 
   private UserEntity getRequiredUser(UUID userId) {

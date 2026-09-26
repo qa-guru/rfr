@@ -21,14 +21,23 @@ create table if not exists `user`
 
 create table if not exists `friendship`
 (
-    requester_id binary(16) not null,
-    addressee_id binary(16) not null,
-    created_date datetime not null,
-    status varchar(50) not null,
-    primary key (requester_id, addressee_id),
-    constraint friend_are_distinct_ck check (requester_id <> addressee_id),
-    constraint fk_requester_id foreign key (requester_id) references `user` (id),
-    constraint fk_addressee_id foreign key (addressee_id) references `user` (id)
+    id           binary(16)  not null,
+    requester_id binary(16)  not null,
+    addressee_id binary(16)  not null,
+    status       varchar(16) not null,
+    created_at   datetime(6) not null,
+    responded_at datetime(6),
+    version      bigint      not null default 0,
+    user_low_id  binary(16) as (least(requester_id, addressee_id)) stored,
+    user_high_id binary(16) as (greatest(requester_id, addressee_id)) stored,
+    primary key (id),
+    constraint uq_friendship_pair unique (user_low_id, user_high_id),
+    constraint ck_friendship_distinct check (requester_id <> addressee_id),
+    constraint ck_friendship_status check (status in ('PENDING', 'ACCEPTED')),
+    constraint fk_friendship_requester foreign key (requester_id) references `user` (id),
+    constraint fk_friendship_addressee foreign key (addressee_id) references `user` (id),
+    index ix_friendship_requester_status (requester_id, status),
+    index ix_friendship_addressee_status (addressee_id, status)
 );
 
 create table if not exists `photo`

@@ -1,5 +1,5 @@
-import {IconButton, InputBase, Paper, Toolbar, useTheme} from "@mui/material";
-import {FC, FormEvent, useState} from "react";
+import {IconButton, InputBase, Paper, Toolbar} from "@mui/material";
+import {ChangeEvent, FC, FormEvent, useState} from "react";
 import SearchIcon from '@mui/icons-material/Search';
 
 
@@ -10,7 +10,6 @@ interface TableToolbarProps {
 
 export const TableToolbar: FC<TableToolbarProps> = ({setSearch, onSearchSubmit}) => {
     const [value, setValue] = useState("");
-    const theme = useTheme();
 
     const handleSubmitSearch = (e: FormEvent) => {
         e.preventDefault();
@@ -19,29 +18,32 @@ export const TableToolbar: FC<TableToolbarProps> = ({setSearch, onSearchSubmit})
     }
 
     return (
-        <Toolbar
-            sx={{
-                pl: {sm: 2},
-                pr: {sm: 2},
-                pt: {sm: 2},
-                pb: {sm: 2},
-                backgroundColor: theme.palette.secondary.main,
-                borderRadius: 1,
-            }}
-        >
+        <Toolbar disableGutters sx={{px: {xs: 2, sm: 3}, py: 2}}>
             <Paper
                 component="form"
-                sx={{p: '4px 4px', display: 'flex', alignItems: 'center', width: "100%"}}
+                variant="outlined"
+                sx={{
+                    p: '2px 4px 2px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: "100%",
+                    maxWidth: 480,
+                    borderRadius: 999,
+                    bgcolor: "action.hover",
+                    borderColor: "transparent",
+                    "&:focus-within": {borderColor: "primary.main", bgcolor: "background.paper"},
+                }}
                 onSubmit={handleSubmitSearch}
             >
+                <SearchIcon sx={{color: "text.secondary", mr: 1}} fontSize="small"/>
                 <InputBase
-                    sx={{ml: 1, flex: 1}}
+                    sx={{flex: 1}}
                     placeholder="Search people"
                     value={value}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => setValue(e.target.value)}
+                    onChange={(e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => setValue(e.target.value)}
                     inputProps={{'aria-label': 'search people'}}
                 />
-                <IconButton type="submit" sx={{p: '10px'}} aria-label="search">
+                <IconButton type="submit" size="small" color="primary" aria-label="search">
                     <SearchIcon/>
                 </IconButton>
             </Paper>

@@ -1,6 +1,6 @@
 import {ErrorLike, gql} from "@apollo/client";
 import {useMutation} from "@apollo/client/react";
-import {GET_FEED} from "./useGetFeed.ts";
+import {FEED_PAGE_SIZE, GET_FEED} from "./useGetFeed.ts";
 
 interface PhotoInput {
     variables: {
@@ -52,7 +52,7 @@ export const useCreatePhoto = (req: CreatePhotoRequestType): CreatePhotoReturnTy
             variables: {
                 withFriends: req.withFriends,
                 page: 0,
-                size: 12,
+                size: FEED_PAGE_SIZE,
             }
         }, "GetFeed"],
     });

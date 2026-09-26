@@ -1,10 +1,25 @@
-import {Box, Button, IconButton, Typography, useTheme} from '@mui/material';
-import Paper from '@mui/material/Paper';
-import FavoriteOutlinedIcon from '@mui/icons-material/FavoriteOutlined';
-import {FC, useContext} from 'react';
+import {
+    Avatar,
+    Box,
+    Card,
+    CardContent,
+    CardMedia,
+    Chip,
+    IconButton,
+    ListItemIcon,
+    Menu,
+    MenuItem,
+    Tooltip,
+    Typography
+} from '@mui/material';
+import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
+import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded';
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import {FC, MouseEvent, useContext, useState} from 'react';
 import "./styles.css";
 import {Photo} from '../../types/Photo';
-import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import {SessionContext} from '../../context/SessionContext';
 import {useDeletePhoto} from '../../hooks/useDeletePhoto';
 import {useSnackBar} from '../../context/useSnackBar';
@@ -14,21 +29,17 @@ import {errorMessage} from '../../api/graphqlError';
 interface PhotoCardInterface {
     photo: Photo;
     onEditClick: (photo: Photo) => void;
-    withFriends: boolean;
-    page: number;
 }
 
-export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick, withFriends, page}) => {
+export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick}) => {
     const {user} = useContext(SessionContext);
     const snackbar = useSnackBar();
-    const theme = useTheme();
-
+    const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+    const liked = photo.likes?.likes?.some((el) => el.user === user?.id) ?? false;
 
     const {deletePhoto} = useDeletePhoto({
         onError: (e) => snackbar.showSnackBar(errorMessage(e, "Can not delete post"), "error"),
         onCompleted: () => snackbar.showSnackBar("Post deleted", "success"),
-        page,
-        withFriends,
     });
 
     const {likePhoto} = useLikePhoto({
@@ -36,13 +47,22 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick, withFrien
         onCompleted: () => snackbar.showSnackBar("Post was succesfully liked", "success"),
     });
 
+    const openMenu = (event: MouseEvent<HTMLElement>) => setMenuAnchor(event.currentTarget);
+    const closeMenu = () => setMenuAnchor(null);
+
+    const handleEdit = () => {
+        closeMenu();
+        onEditClick(photo);
+    };
+
     const handleDeletePhoto = () => {
+        closeMenu();
         deletePhoto({
             variables: {
                 id: photo.id,
             }
         });
-    }
+    };
 
     const handleLikePhoto = () => {
         likePhoto({
@@ -55,85 +75,85 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick, withFrien
                 }
             }
         });
-    }
+    };
 
     return (
-        <Paper elevation={3} sx={{padding: 1, boxSizing: "border-box"}}>
-            <img
-                className="photo-card__image"
-                src={photo.src}
-                alt={photo.description}
-            />
-            <Box sx={{paddingX: 1.25}}>
-                <Box
+        <Card className="photo-card" sx={{height: "100%", display: "flex", flexDirection: "column"}}>
+            <Box sx={{position: "relative", overflow: "hidden"}}>
+                <CardMedia
+                    component="img"
+                    className="photo-card__image"
+                    image={photo.src}
+                    alt={photo.description || photo.country.name}
+                />
+                <Chip
+                    size="small"
+                    avatar={<Avatar src={photo.country.flag} alt=""/>}
+                    label={photo.country.name}
                     sx={{
-                        display: "flex",
-                        alignItems: "center",
+                        position: "absolute",
+                        left: 12,
+                        top: 12,
+                        bgcolor: "background.paper",
+                        boxShadow: 1,
                     }}
-                >
-                    <FavoriteOutlinedIcon sx={{width: 15}}/>
-                    <Typography component="p" variant="body2" sx={{marginLeft: 0.5}}>
-                        {photo.likes.total} likes
-                    </Typography>
-                    <IconButton
-                        aria-label="like" size="small"
-                        sx={{
-                            marginLeft: "auto",
-                            color: theme.palette.primary.main,
-                        }}
-                        onClick={handleLikePhoto}
-                    >
-                        {
-                            photo.likes?.likes.some((el) => el.user === user?.id) ?
-                                <FavoriteOutlinedIcon/> :
-                                <FavoriteBorderOutlinedIcon/>
-                        }
-                    </IconButton>
-                </Box>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                    }}
-                >
-                    <Typography component="h3" variant="subtitle1">
-                        <img width={20} src={photo.country.flag} alt={photo.country.name}/> {photo.country.name}
-                    </Typography>
-                </Box>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginTop: 1,
-                        height: 12,
-                    }}
-                >
-                    <Typography
-                        component="p"
-                        variant="body2"
-                        className="photo-card__content"
-                        color="secondary">
-                        {photo.description}
-                    </Typography>
-                </Box>
-                <Box
-                    sx={{
-                        display: "flex",
-                        marginTop: 2,
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                    }}
-                >
-                    {photo.isOwner && (
-                        <>
-                            <Button variant="contained" sx={{margin: 1, width: "100%"}}
-                                    onClick={() => onEditClick(photo)}>Edit</Button>
-                            <Button variant="outlined" sx={{margin: 1, width: "100%"}}
-                                    onClick={handleDeletePhoto}>Delete</Button>
-                        </>
-                    )}
-                </Box>
+                />
+                {photo.isOwner && (
+                    <>
+                        <Tooltip title="Actions">
+                            <IconButton
+                                aria-label="Photo actions"
+                                size="small"
+                                onClick={openMenu}
+                                sx={{
+                                    position: "absolute",
+                                    right: 12,
+                                    top: 10,
+                                    bgcolor: "background.paper",
+                                    boxShadow: 1,
+                                    "&:hover": {bgcolor: "background.paper"},
+                                }}
+                            >
+                                <MoreVertRoundedIcon fontSize="small"/>
+                            </IconButton>
+                        </Tooltip>
+                        <Menu
+                            anchorEl={menuAnchor}
+                            open={Boolean(menuAnchor)}
+                            onClose={closeMenu}
+                            anchorOrigin={{vertical: "bottom", horizontal: "right"}}
+                            transformOrigin={{vertical: "top", horizontal: "right"}}
+                        >
+                            <MenuItem onClick={handleEdit}>
+                                <ListItemIcon><EditOutlinedIcon fontSize="small"/></ListItemIcon>
+                                Edit
+                            </MenuItem>
+                            <MenuItem onClick={handleDeletePhoto} sx={{color: "error.main"}}>
+                                <ListItemIcon sx={{color: "inherit"}}><DeleteOutlineRoundedIcon fontSize="small"/></ListItemIcon>
+                                Delete
+                            </MenuItem>
+                        </Menu>
+                    </>
+                )}
             </Box>
-        </Paper>
+            <CardContent sx={{flexGrow: 1, display: "flex", flexDirection: "column", gap: 1, pb: "12px !important"}}>
+                <Typography variant="body2" className="photo-card__content" sx={{color: "text.secondary", minHeight: "2.86em"}}>
+                    {photo.description}
+                </Typography>
+                <Box sx={{display: "flex", alignItems: "center", mt: "auto"}}>
+                    <IconButton
+                        aria-label="like"
+                        size="small"
+                        onClick={handleLikePhoto}
+                        sx={{color: liked ? "error.main" : "text.secondary", ml: -0.75}}
+                    >
+                        {liked ? <FavoriteRoundedIcon fontSize="small"/> : <FavoriteBorderRoundedIcon fontSize="small"/>}
+                    </IconButton>
+                    <Typography variant="body2" sx={{fontWeight: 600}}>
+                        {photo.likes.total} {photo.likes.total === 1 ? "like" : "likes"}
+                    </Typography>
+                </Box>
+            </CardContent>
+        </Card>
     );
 };

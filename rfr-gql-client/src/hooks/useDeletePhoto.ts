@@ -1,6 +1,5 @@
 import {ErrorLike, gql} from "@apollo/client";
 import {useMutation} from "@apollo/client/react";
-import {GET_FEED} from "./useGetFeed.ts";
 
 interface DeletePhotoInput {
     variables: {
@@ -17,8 +16,6 @@ const DELETE_PHOTO = gql(`
 type DeletePhotoRequestType = {
     onError: (error: ErrorLike) => void,
     onCompleted: () => void,
-    page: number,
-    withFriends: boolean,
 }
 
 type DeletePhotoReturnType = {
@@ -30,14 +27,7 @@ export const useDeletePhoto = (req: DeletePhotoRequestType): DeletePhotoReturnTy
     const [deletePhoto, {loading}] = useMutation(DELETE_PHOTO, {
         onError: req.onError,
         onCompleted: req.onCompleted,
-        refetchQueries: [{
-            query: GET_FEED,
-            variables: {
-                withFriends: req.withFriends,
-                page: req.page ?? 0,
-                size: 12,
-            }
-        }, "GetFeed"],
+        refetchQueries: ["GetFeed"],
     });
     return {deletePhoto, loading};
 };

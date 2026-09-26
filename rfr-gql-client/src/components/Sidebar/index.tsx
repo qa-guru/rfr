@@ -1,4 +1,4 @@
-import {Box, List, useTheme} from "@mui/material";
+import {Box, List} from "@mui/material";
 import {FC} from "react";
 import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
 import PersonSearchRoundedIcon from '@mui/icons-material/PersonSearchRounded';
@@ -12,8 +12,6 @@ interface SidebarProps {
 }
 
 export const Sidebar: FC<SidebarProps> = ({sidebarState}) => {
-    const theme = useTheme();
-
     return (
         <Drawer
             anchor="left"
@@ -21,20 +19,15 @@ export const Sidebar: FC<SidebarProps> = ({sidebarState}) => {
             variant="permanent"
             sx={{
                 '& .MuiDrawer-paper': {
-                    backgroundColor: theme.palette.primary.main,
-                    color: theme.palette.primary.contrastText,
+                    bgcolor: "background.paper",
+                    borderRight: 1,
+                    borderColor: "divider",
                 }
             }}
         >
             <DrawerHeader/>
-            <Box sx={{width: 250, overflow: "auto"}}>
-                <List>
-                    <SidebarItem
-                        sidebarState={sidebarState}
-                        name="Profile"
-                        icon={<AccountCircleRoundedIcon/>}
-                        link="/profile"
-                    />
+            <Box sx={{overflow: "auto"}}>
+                <List sx={{px: 1}}>
                     <SidebarItem
                         sidebarState={sidebarState}
                         name="My map"
@@ -46,6 +39,12 @@ export const Sidebar: FC<SidebarProps> = ({sidebarState}) => {
                         name="People"
                         icon={<PersonSearchRoundedIcon/>}
                         link="/people"
+                    />
+                    <SidebarItem
+                        sidebarState={sidebarState}
+                        name="Profile"
+                        icon={<AccountCircleRoundedIcon/>}
+                        link="/profile"
                     />
                 </List>
             </Box>

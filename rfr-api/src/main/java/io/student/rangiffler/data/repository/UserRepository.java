@@ -12,125 +12,67 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<UserEntity, UUID> {
+
+  String SELECT_USER_WITH_STATUS =
+      "select new io.student.rangiffler.data.projection.UserWithStatus(" +
+          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
+          "f.status, " +
+          "case when f.requester.id = :me then true when f.addressee.id = :me then false else null end) " +
+          "from UserEntity u join u.country c ";
+  String PAIR_WITH_ME =
+      "FriendshipEntity f on (f.requester.id = :me and f.addressee = u) " +
+          "or (f.addressee.id = :me and f.requester = u) ";
+  String SEARCH =
+      "and (lower(u.username) like lower(concat('%', :searchQuery, '%')) " +
+          "or lower(u.firstname) like lower(concat('%', :searchQuery, '%')) " +
+          "or lower(u.lastName) like lower(concat('%', :searchQuery, '%'))) ";
+  String ORDER = "order by u.username asc";
+
+  String ALL_USERS = SELECT_USER_WITH_STATUS + "left join " + PAIR_WITH_ME + "where u.id <> :me ";
+  String FRIENDS = SELECT_USER_WITH_STATUS + "join " + PAIR_WITH_ME +
+      "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.ACCEPTED ";
+  String INCOME_INVITATIONS = SELECT_USER_WITH_STATUS +
+      "join FriendshipEntity f on f.requester = u and f.addressee.id = :me " +
+      "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING ";
+  String OUTCOME_INVITATIONS = SELECT_USER_WITH_STATUS +
+      "join FriendshipEntity f on f.addressee = u and f.requester.id = :me " +
+      "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING ";
+
   Optional<UserEntity> findByUsername(String username);
 
-  @Query(
-      "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
-          "coalesce(f1.status, f2.status), " +
-          "case when f2.status is not null then true " +
-          "     when f1.status is not null then false " +
-          "     else null end) " +
-          "from UserEntity u join u.country c " +
-          "left join FriendshipEntity f1 on f1.requester = u and f1.addressee.username = :username " +
-          "left join FriendshipEntity f2 on f2.addressee = u and f2.requester.username = :username " +
-          "where u.username <> :username " +
-          "order by u.username asc"
-  )
-  Page<UserWithStatus> findAllUsersWithFriendshipStatus(@Param("username") String username,
+  @Query(ALL_USERS + ORDER)
+  Page<UserWithStatus> findAllUsersWithFriendshipStatus(@Param("me") UUID me,
                                                         Pageable pageable);
 
-  @Query(
-      "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
-          "coalesce(f1.status, f2.status), " +
-          "case when f2.status is not null then true " +
-          "     when f1.status is not null then false " +
-          "     else null end) " +
-          "from UserEntity u join u.country c " +
-          "left join FriendshipEntity f1 on f1.requester = u and f1.addressee.username = :username " +
-          "left join FriendshipEntity f2 on f2.addressee = u and f2.requester.username = :username " +
-          "where u.username <> :username " +
-          "  and (lower(u.username) like lower(concat('%', :searchQuery, '%')) " +
-          "       or lower(u.firstname) like lower(concat('%', :searchQuery, '%')) " +
-          "       or lower(u.lastName) like lower(concat('%', :searchQuery, '%'))) " +
-          "order by u.username asc"
-  )
-  Page<UserWithStatus> findAllUsersWithFriendshipStatus(@Param("username") String username,
+  @Query(ALL_USERS + SEARCH + ORDER)
+  Page<UserWithStatus> findAllUsersWithFriendshipStatus(@Param("me") UUID me,
                                                         @Param("searchQuery") String searchQuery,
                                                         Pageable pageable);
 
-  @Query(
-      "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
-          "f.status, true) " +
-          "from UserEntity u join u.country c " +
-          "join FriendshipEntity f on u = f.addressee and f.requester.username = :username " +
-          "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.ACCEPTED " +
-          "order by u.username asc"
-  )
-  Page<UserWithStatus> findFriends(@Param("username") String username,
+  @Query(FRIENDS + ORDER)
+  Page<UserWithStatus> findFriends(@Param("me") UUID me,
                                    Pageable pageable);
 
-  @Query(
-      "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
-          "f.status, true) " +
-          "from UserEntity u join u.country c " +
-          "join FriendshipEntity f on u = f.addressee and f.requester.username = :username " +
-          "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.ACCEPTED " +
-          "  and (lower(u.username) like lower(concat('%', :searchQuery, '%')) " +
-          "       or lower(u.firstname) like lower(concat('%', :searchQuery, '%')) " +
-          "       or lower(u.lastName) like lower(concat('%', :searchQuery, '%'))) " +
-          "order by u.username asc"
-  )
-  Page<UserWithStatus> findFriends(@Param("username") String username,
+  @Query(FRIENDS + SEARCH + ORDER)
+  Page<UserWithStatus> findFriends(@Param("me") UUID me,
                                    @Param("searchQuery") String searchQuery,
                                    Pageable pageable);
 
-  @Query(
-      "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
-          "f.status, true) " +
-          "from UserEntity u join u.country c " +
-          "join FriendshipEntity f on u = f.addressee and f.requester.username = :username " +
-          "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING " +
-          "order by u.username asc"
-  )
-  Page<UserWithStatus> findOutcomeInvitations(@Param("username") String username,
+  @Query(OUTCOME_INVITATIONS + ORDER)
+  Page<UserWithStatus> findOutcomeInvitations(@Param("me") UUID me,
                                               Pageable pageable);
 
-  @Query(
-      "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
-          "f.status, true) " +
-          "from UserEntity u join u.country c " +
-          "join FriendshipEntity f on u = f.addressee and f.requester.username = :username " +
-          "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING " +
-          "  and (lower(u.username) like lower(concat('%', :searchQuery, '%')) " +
-          "       or lower(u.firstname) like lower(concat('%', :searchQuery, '%')) " +
-          "       or lower(u.lastName) like lower(concat('%', :searchQuery, '%'))) " +
-          "order by u.username asc"
-  )
-  Page<UserWithStatus> findOutcomeInvitations(@Param("username") String username,
+  @Query(OUTCOME_INVITATIONS + SEARCH + ORDER)
+  Page<UserWithStatus> findOutcomeInvitations(@Param("me") UUID me,
                                               @Param("searchQuery") String searchQuery,
                                               Pageable pageable);
 
-  @Query(
-      "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
-          "f.status, false) " +
-          "from UserEntity u join u.country c " +
-          "join FriendshipEntity f on u = f.requester and f.addressee.username = :username " +
-          "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING " +
-          "order by u.username asc"
-  )
-  Page<UserWithStatus> findIncomeInvitations(@Param("username") String username,
+  @Query(INCOME_INVITATIONS + ORDER)
+  Page<UserWithStatus> findIncomeInvitations(@Param("me") UUID me,
                                              Pageable pageable);
 
-  @Query(
-      "select new io.student.rangiffler.data.projection.UserWithStatus(" +
-          "u.id, u.username, u.firstname, u.lastName, u.avatar, c.code, c.name, c.flag, " +
-          "f.status, false) " +
-          "from UserEntity u join u.country c " +
-          "join FriendshipEntity f on u = f.requester and f.addressee.username = :username " +
-          "where f.status = io.student.rangiffler.data.entity.FriendshipStatus.PENDING " +
-          "  and (lower(u.username) like lower(concat('%', :searchQuery, '%')) " +
-          "       or lower(u.firstname) like lower(concat('%', :searchQuery, '%')) " +
-          "       or lower(u.lastName) like lower(concat('%', :searchQuery, '%'))) " +
-          "order by u.username asc"
-  )
-  Page<UserWithStatus> findIncomeInvitations(@Param("username") String username,
+  @Query(INCOME_INVITATIONS + SEARCH + ORDER)
+  Page<UserWithStatus> findIncomeInvitations(@Param("me") UUID me,
                                              @Param("searchQuery") String searchQuery,
                                              Pageable pageable);
 }
