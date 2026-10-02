@@ -473,7 +473,21 @@ message UsersResponse {
 ###### Security config
 
    Запросы `POST /graphql` пропускаются фильтрами без авторизации, а доступ проверяется на уровне контроллеров
-через `@PreAuthorize("isAuthenticated()")` (`@EnableMethodSecurity`). Для локального тестирования вы можете открыть страницу
+через `@PreAuthorize` (`@EnableMethodSecurity`): query-контроллеры требуют authority `read`, mutation-контроллеры - `write`.
+
+   API принимает только **access token**, выпущенный для него: `rfr-auth` кладет в access token `aud: rangiffler-api`
+и claim `authorities` (права пользователя из `rangiffler-auth.authority`), а `rfr-api` проверяет audience
+(`spring.security.oauth2.resourceserver.jwt.audiences`) и превращает claim `authorities` в `GrantedAuthority`
+(`JwtAuthenticationConverter` в `RangifflerApiConfiguration`). `id_token` предназначен фронтенду (`aud` = client_id),
+поэтому API его отвергает с 401. Фронтенд использует `id_token` только как `id_token_hint` при logout.
+
+   Access token живет 10 минут. При logout фронтенд отзывает его через `POST /oauth2/revoke` (RFC 7009, публичный клиент
+идентифицируется по `client_id`), а затем вызывает OIDC logout. Учтите: access token - самодостаточный JWT, `rfr-api`
+проверяет его локально по подписи и не знает об отзыве, поэтому отозванный токен продолжает приниматься API до `exp`.
+Отзыв делает недействительной авторизацию на стороне `rfr-auth`; мгновенный отказ API потребовал бы opaque-токенов
+и introspection.
+
+   Для локального тестирования вы можете открыть страницу
 GraphiQL (`spring.graphql.graphiql.enabled: true` уже включен в `application.yml`):
 ```java
     @Bean
@@ -490,7 +504,7 @@ GraphiQL (`spring.graphql.graphiql.enabled: true` уже включен в `appl
         return http.build();
     }
 ```
-   Сами запросы из GraphiQL все равно потребуют токен - добавьте заголовок `Authorization: Bearer <id_token>` в разделе Headers
+   Сами запросы из GraphiQL все равно потребуют токен - добавьте заголовок `Authorization: Bearer <access_token>` в разделе Headers
 (токен можно взять в `localStorage` фронта после логина).
 
 ###### GraphQL контроллеры и @SchemaMapping
