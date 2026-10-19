@@ -1,0 +1,15 @@
+- main [ref=f9e42]:
+  - generic [ref=f9e320]:
+    - heading "People" [level=2] [ref=f9e321]
+    - tablist "People tabs" [ref=f9e325]:
+      - tab "Friends" [ref=f9e326] [cursor=pointer]
+      - tab "All People" [active] [selected] [ref=f9e327] [cursor=pointer]
+      - tab "Outcome invitations" [ref=f9e328] [cursor=pointer]
+      - tab "Income invitations" [ref=f9e329] [cursor=pointer]
+    - tabpanel [ref=f9e331]:
+      - generic [ref=f9e348]:
+        - generic [ref=f9e350]:
+          - textbox "search people" [ref=f9e354]:
+            - /placeholder: Search people
+          - button "search" [ref=f9e355] [cursor=pointer]
+        - paragraph [ref=f9e361]: There are no users yet

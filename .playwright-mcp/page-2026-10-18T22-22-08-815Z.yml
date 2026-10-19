@@ -1,0 +1,63 @@
+- generic [ref=f13e1]:
+  - generic [ref=f13e2]:
+    - generic:
+      - banner [ref=f13e6]:
+        - generic [ref=f13e7]:
+          - button "open drawer" [ref=f13e582] [cursor=pointer]
+          - link [ref=f13e583] [cursor=pointer]:
+            - /url: /my-travels
+            - heading "Rangiffler" [level=1] [ref=f13e584]
+          - generic [ref=f13e13]:
+            - button "Toggle dark mode" [ref=f13e585] [cursor=pointer]
+            - link "Profile" [ref=f13e586] [cursor=pointer]:
+              - /url: /profile
+              - generic [ref=f13e18]: U
+            - button "Logout" [ref=f13e587] [cursor=pointer]
+      - list [ref=f13e25]:
+        - listitem [ref=f13e26]:
+          - link "My map" [ref=f13e588] [cursor=pointer]:
+            - /url: /my-travels
+        - listitem [ref=f13e31]:
+          - link "People" [ref=f13e589] [cursor=pointer]:
+            - /url: /people
+        - listitem [ref=f13e37]:
+          - link "Profile" [ref=f13e590] [cursor=pointer]:
+            - /url: /profile
+    - main [ref=f13e42]:
+      - generic [ref=f13e46]:
+        - button "Update avatar" [ref=f13e591] [cursor=pointer]
+        - generic [ref=f13e55]:
+          - heading "My profile" [level=2] [ref=f13e592]
+          - generic [ref=f13e57]:
+            - generic [ref=f13e59]:
+              - generic [ref=f13e60]: First Name
+              - generic [ref=f13e61]:
+                - textbox "First Name" [ref=f13e593]: Test
+                - group [aria-hidden]:
+                  - generic: First Name
+            - generic [ref=f13e64]:
+              - generic [ref=f13e65]: Surname
+              - generic [ref=f13e66]:
+                - textbox "Surname" [ref=f13e594]
+                - group [aria-hidden]:
+                  - generic: Surname
+            - generic [ref=f13e69]:
+              - generic [ref=f13e70]: Username
+              - generic [ref=f13e71]:
+                - textbox "Username" [disabled] [ref=f13e595]: username
+                - group [aria-hidden]:
+                  - generic: Username
+            - generic [ref=f13e74]:
+              - generic [ref=f13e75]: Location
+              - generic [ref=f13e76]:
+                - combobox "Location" [active] [ref=f13e596] [cursor=pointer]:
+                  - img "Denmark" [ref=f13e597]
+                  - text: Denmark
+                - textbox [aria-hidden]: dk
+                - group [aria-hidden]:
+                  - generic: Location
+            - generic [ref=f13e80]:
+              - button "Reset" [ref=f13e598] [cursor=pointer]
+              - button "Save" [ref=f13e599] [cursor=pointer]
+  - generic: Location
+  - generic: Description
