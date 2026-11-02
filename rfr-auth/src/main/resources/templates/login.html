@@ -25,7 +25,7 @@
                 <span><span class="header__accent">R</span>angiffler</span>
             </h1>
             <p class="header__subtitle">Welcome back! Sign in to share your travels.</p>
-            <form class="form" action="#" th:action="@{/login}" method="post">
+            <form class="form" action="#" th:action="@{/login}" method="post" accept-charset="UTF-8">
                 <div th:if="${param.error}">
                     <p class="form__error form__alert">[[${session.SPRING_SECURITY_LAST_EXCEPTION.message}]]</p>
                 </div>

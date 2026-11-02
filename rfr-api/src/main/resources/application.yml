@@ -17,7 +17,7 @@ spring:
           issuer-uri: 'http://localhost:9001'
           audiences: 'rangiffler-api'
   datasource:
-    url: 'jdbc:mysql://localhost:3306/rangiffler-api?serverTimezone=UTC&createDatabaseIfNotExist=true'
+    url: 'jdbc:mysql://localhost:3306/rangiffler-api?serverTimezone=UTC&createDatabaseIfNotExist=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci'
     hikari:
       connection-timeout: 20000
       minimum-idle: 10

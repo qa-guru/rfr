@@ -27,7 +27,7 @@
             <p class="header__subtitle">Create an account and start mapping your trips.</p>
             <form th:if="${username == null}" class="form" id="register-form" th:object="${registrationForm}"
                   action="/register" th:action="@{/register}"
-                  method="post">
+                  method="post" accept-charset="UTF-8">
                 <label class="form__label">Username
                     <input class="form__input" type="text" id="username" th:field="*{username}" name="username"
                            placeholder="Type your username" required/>

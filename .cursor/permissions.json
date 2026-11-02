@@ -1,0 +1,30 @@
+{
+  "mcpAllowlist": [
+    "cursor-ide-browser:*",
+    "playwright:*"
+  ],
+  "terminalAllowlist": [
+    "./gradlew",
+    ".\\gradlew.bat",
+    "gradlew.bat",
+    "gradlew",
+    "npm run dev",
+    "npm run preview",
+    "docker compose up -d mysql",
+    "docker compose start mysql",
+    "docker compose stop mysql",
+    "bash localenv.sh",
+    "./localenv.sh",
+    "mv"
+  ],
+  "autoRun": {
+    "allow_instructions": [
+      "Starting and stopping rfr-auth on 9001, rfr-api on 8081, the frontend on 3001, MySQL via docker compose, and Gradle e2e tests is allowed.",
+      "Renaming a file with mv to a sibling .name.<unix-time>.bak is allowed."
+    ],
+    "block_instructions": [
+      "Never auto-run git push in any form, including git -C, git --git-dir, git --work-tree, and git push --force.",
+      "Never auto-run file deletion: rm, unlink, find -delete, git rm, del, rmdir, Remove-Item, shred."
+    ]
+  }
+}
