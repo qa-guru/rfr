@@ -29,6 +29,10 @@ dependencies {
     testImplementation "com.microsoft.playwright:playwright:$playwrightVersion"
 
     testImplementation "org.junit.jupiter:junit-jupiter"
+    testImplementation platform("org.springframework.boot:spring-boot-dependencies:4.1.1")
+    testImplementation "org.springframework:spring-jdbc"
+    testImplementation "org.springframework.security:spring-security-crypto"
+    testImplementation "mysql:mysql-connector-java:8.0.33"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
     testRuntimeOnly "org.aspectj:aspectjrt:$aspectJVersion"
 }
@@ -43,5 +47,10 @@ allure {
 
 test {
     useJUnitPlatform()
+    System.properties.each { key, value ->
+        if (key.toString().startsWith('rfr.')) {
+            systemProperty key.toString(), value
+        }
+    }
     jvmArgumentProviders.add({ ["-javaagent:${configurations.agent.singleFile}"] } as CommandLineArgumentProvider)
 }
