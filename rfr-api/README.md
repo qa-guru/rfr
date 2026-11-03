@@ -223,8 +223,7 @@ UUID пользователя в `rangiffler-api` и `rangiffler-auth` неза�
 Требования: JDK 25 (Gradle toolchain), Docker для MySQL, запущенный `rfr-auth` (нужен для JWKS).
 
 ```bash
-# из корня проекта: MySQL в Docker
-# внимание: localenv.sh останавливает и удаляет ВСЕ docker-контейнеры на машине
+# из корня проекта: MySQL из docker-compose.yml (контейнер rfr-mysql, ждёт healthy)
 bash localenv.sh
 
 cd rfr-api

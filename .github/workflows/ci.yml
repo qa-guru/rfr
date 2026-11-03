@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push: # Триггер на любой пуш в любую ветку
+  # pull_request:
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      auth: ${{ steps.filter.outputs.auth }}
+      api: ${{ steps.filter.outputs.api }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      ci: ${{ steps.filter.outputs.ci }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            auth:
+              - 'rfr-auth/**'
+              - 'build.gradle'
+              - 'settings.gradle'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
+            api:
+              - 'rfr-api/**'
+              - 'build.gradle'
+              - 'settings.gradle'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
+            e2e:
+              - 'rfr-e2e/**'
+              - 'build.gradle'
+              - 'settings.gradle'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
+            frontend:
+              - 'rfr-gql-client/**'
+            ci:
+              - '.github/workflows/ci.yml'
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.auth == 'true' || needs.changes.outputs.api == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+      - name: Build backends
+        env:
+          BUILD_AUTH: ${{ needs.changes.outputs.auth }}
+          BUILD_API: ${{ needs.changes.outputs.api }}
+          BUILD_CI: ${{ needs.changes.outputs.ci }}
+        run: |
+          tasks=()
+          if [ "$BUILD_AUTH" = true ] || [ "$BUILD_CI" = true ]; then tasks+=(":rfr-auth:build"); fi
+          if [ "$BUILD_API" = true ] || [ "$BUILD_CI" = true ]; then tasks+=(":rfr-api:build"); fi
+          ./gradlew --no-daemon "${tasks[@]}" -x test
+
+  e2e:
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+      - name: Compile e2e tests
+        run: ./gradlew --no-daemon e2eClasses
+
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rfr-gql-client
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: rfr-gql-client/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build

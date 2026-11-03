@@ -36,7 +36,7 @@ rfr/
 │   ├── Реальные контроллеры для пользователей и стран
 │   └── Flyway миграции БД
 ├── rfr-gql-client/        # React + TypeScript Frontend (готов)
-└── rfr-e2e/               # E2E тесты: JUnit 6 + Playwright + Allure 3 (заготовка)
+└── rfr-e2e/               # E2E тесты: JUnit 6 + Playwright + Allure 3
 ```
 
 **Порты:**
@@ -80,9 +80,13 @@ Mock контроллеры возвращают статические данн
 bash localenv.sh
 ```
 
-Скрипт запустит MySQL в Docker контейнере.
+Скрипт выполняет `docker compose up -d mysql --wait` (файл `docker-compose.yml`): поднимает контейнер `rfr-mysql` и ждёт `healthy`. Остальные контейнеры на машине не трогает. Эквивалент из корня: `docker compose up -d mysql --wait`.
 
-#### 2. Запусти rfr-auth:
+#### 2. Запусти rfr-auth и rfr-api:
+
+Из корня оба сервиса сразу: `./gradlew runAll` (auth `:9001`, api `:8081`).
+
+Или по отдельности:
 
 ```bash
 cd rfr-auth
@@ -91,7 +95,7 @@ cd rfr-auth
 
 Или запусти класс с методом main руками. Auth будет доступен на порту 9001: http://localhost:9001
 
-#### 3. Запусти rfr-api:
+#### 3. Запусти rfr-api (если не использовал `runAll`):
 
 ```bash
 cd rfr-api
@@ -100,13 +104,13 @@ cd rfr-api
 
 rfr-api стартанет на порту 8081: http://localhost:8081/graphql
 
-GraphiQL интерфейс доступен по адресу: http://localhost:8081/graphiql
+GraphiQL включён (`http://localhost:8081/graphiql`), но `GET /graphiql` требует JWT: в цепочке фильтров `permitAll` только у `POST /graphql`.
 
 #### 4. Обнови зависимости и запускай фронт:
 
 ```bash
 cd rfr-gql-client
-npm i
+npm ci
 npm run dev
 ```
 
@@ -481,7 +485,7 @@ message UsersResponse {
 (`JwtAuthenticationConverter` в `RangifflerApiConfiguration`). `id_token` предназначен фронтенду (`aud` = client_id),
 поэтому API его отвергает с 401. Фронтенд использует `id_token` только как `id_token_hint` при logout.
 
-   Access token живет 10 минут. При logout фронтенд отзывает его через `POST /oauth2/revoke` (RFC 7009, публичный клиент
+   Access token живет 30 минут (`access-token-time-to-live` в `rfr-auth`). При logout фронтенд отзывает его через `POST /oauth2/revoke` (RFC 7009, публичный клиент
 идентифицируется по `client_id`), а затем вызывает OIDC logout. Учтите: access token - самодостаточный JWT, `rfr-api`
 проверяет его локально по подписи и не знает об отзыве, поэтому отозванный токен продолжает приниматься API до `exp`.
 Отзыв делает недействительной авторизацию на стороне `rfr-auth`; мгновенный отказ API потребовал бы opaque-токенов
@@ -497,7 +501,6 @@ GraphiQL (`spring.graphql.graphiql.enabled: true` уже включен в `appl
             .authorizeHttpRequests(customizer ->
                 customizer
                     .requestMatchers(HttpMethod.POST, "/graphql").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/graphiql/**").permitAll()
                     .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
