@@ -186,14 +186,15 @@ OAuth-авторизации, consent и ключи в БД не хранятс�
 ## Запуск
 
 Требования: JDK 25 (Gradle toolchain), Docker для MySQL.
+Доказательство корректности теста - запуск gradle таски.
 
 ```bash
 # из корня проекта: MySQL в Docker
-# внимание: localenv.sh останавливает и удаляет ВСЕ docker-контейнеры на машине
-bash localenv.sh
+docker compose up -d
+# дождись healthy: docker compose ps
 
-cd rfr-auth
-../gradlew bootRun
+./gradlew runAll
+# или только auth: ./gradlew :rfr-auth:bootRun
 # или main class io.student.rangiffler.RangifflerAuthApplication из IDE
 ```
 

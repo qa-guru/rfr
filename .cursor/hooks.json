@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "postToolUse": [
+      {
+        "matcher": "Write",
+        "command": ".cursor/hooks/compile-on-edit.sh",
+        "timeout": 180
+      },
+      {
+        "matcher": "StrReplace",
+        "command": ".cursor/hooks/compile-on-edit.sh",
+        "timeout": 180
+      }
+    ]
+  }
+}

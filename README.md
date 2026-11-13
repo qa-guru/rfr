@@ -77,32 +77,24 @@ Mock контроллеры возвращают статические данн
 #### 1. Запусти зависимости (БД):
 
 ```bash
-bash localenv.sh
+docker compose up -d
 ```
 
-Скрипт запустит MySQL в Docker контейнере.
+Поднимется MySQL (`mysql:8.4.7`) на порту `3306`, пользователь `root`, пароль `secret`.
+Дождись статуса `healthy`: `docker compose ps`.
 
-#### 2. Запусти rfr-auth:
+#### 2. Запусти оба бэкенда:
 
 ```bash
-cd rfr-auth
-../gradlew bootRun
+./gradlew runAll
 ```
 
-Или запусти класс с методом main руками. Auth будет доступен на порту 9001: http://localhost:9001
+- `rfr-auth`: http://localhost:9001
+- `rfr-api`: http://localhost:8081/graphql (GraphiQL: http://localhost:8081/graphiql)
 
-#### 3. Запусти rfr-api:
+По отдельности: `./gradlew :rfr-auth:bootRun` и `./gradlew :rfr-api:bootRun` (или main-класс из IDE).
 
-```bash
-cd rfr-api
-../gradlew bootRun
-```
-
-rfr-api стартанет на порту 8081: http://localhost:8081/graphql
-
-GraphiQL интерфейс доступен по адресу: http://localhost:8081/graphiql
-
-#### 4. Обнови зависимости и запускай фронт:
+#### 3. Обнови зависимости и запускай фронт:
 
 ```bash
 cd rfr-gql-client
@@ -112,7 +104,7 @@ npm run dev
 
 Фронт стартанет в твоем браузере на порту 3001: http://localhost:3001/
 
-#### 5. Проверь работоспособность
+#### 4. Проверь работоспособность
 
 Кнопка "Login" работает через сервис auth. После успешной авторизации ты попадешь на главную страницу Rangiffler.
 

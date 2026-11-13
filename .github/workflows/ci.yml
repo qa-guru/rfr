@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      auth: ${{ steps.filter.outputs.auth }}
+      api: ${{ steps.filter.outputs.api }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      ci: ${{ steps.filter.outputs.ci }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            auth:
+              - 'rfr-auth/**'
+            api:
+              - 'rfr-api/**'
+            e2e:
+              - 'rfr-e2e/**'
+            frontend:
+              - 'rfr-gql-client/**'
+            backend:
+              - 'rfr-auth/**'
+              - 'rfr-api/**'
+              - 'rfr-e2e/**'
+              - 'build.gradle'
+              - 'settings.gradle'
+              - 'gradle.properties'
+              - 'gradle/**'
+            ci:
+              - '.github/workflows/**'
+
+  backend:
+    name: Backend
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      # Caches ~/.gradle/caches and wrapper between runs
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+
+      - name: Build changed modules
+        env:
+          AUTH: ${{ needs.changes.outputs.auth }}
+          API: ${{ needs.changes.outputs.api }}
+          E2E: ${{ needs.changes.outputs.e2e }}
+          CI_WF: ${{ needs.changes.outputs.ci }}
+          BACKEND: ${{ needs.changes.outputs.backend }}
+        run: |
+          set -euo pipefail
+          tasks=()
+
+          # Workflow or root Gradle (no module paths) → all backend modules
+          build_all=false
+          if [[ "$CI_WF" == "true" ]]; then
+            build_all=true
+          elif [[ "$BACKEND" == "true" && "$AUTH" != "true" && "$API" != "true" && "$E2E" != "true" ]]; then
+            build_all=true
+          fi
+
+          if [[ "$build_all" == "true" ]]; then
+            tasks+=(:rfr-auth:bootJar :rfr-api:bootJar :rfr-e2e:testClasses)
+          else
+            [[ "$AUTH" == "true" ]] && tasks+=(:rfr-auth:bootJar)
+            [[ "$API" == "true" ]] && tasks+=(:rfr-api:bootJar)
+            [[ "$E2E" == "true" ]] && tasks+=(:rfr-e2e:testClasses)
+          fi
+
+          echo "Gradle tasks: ${tasks[*]}"
+          ./gradlew --build-cache "${tasks[@]}"
+
+  frontend:
+    name: Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rfr-gql-client
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: rfr-gql-client/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
