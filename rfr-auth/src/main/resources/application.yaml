@@ -5,6 +5,10 @@ server:
       enabled: false
     path: /error
   servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
     session:
       timeout: 30m
       cookie:
@@ -46,7 +50,7 @@ spring:
               access-token-time-to-live: 30m
               authorization-code-time-to-live: 5m
   datasource:
-    url: 'jdbc:mysql://localhost:3306/rangiffler-auth?serverTimezone=UTC&createDatabaseIfNotExist=true'
+    url: 'jdbc:mysql://localhost:3306/rangiffler-auth?serverTimezone=UTC&createDatabaseIfNotExist=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci'
     hikari:
       connection-timeout: 20000
       minimum-idle: 10

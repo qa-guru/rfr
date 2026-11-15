@@ -17,7 +17,7 @@ import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import {FC, MouseEvent, useContext, useState} from 'react';
+import {FC, MouseEvent, useContext, useId, useState} from 'react';
 import "./styles.css";
 import {Photo} from '../../types/Photo';
 import {SessionContext} from '../../context/SessionContext';
@@ -34,6 +34,9 @@ interface PhotoCardInterface {
 export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick}) => {
     const {user} = useContext(SessionContext);
     const snackbar = useSnackBar();
+    const ids = useId();
+    const countryId = `${ids}-country`;
+    const descriptionId = `${ids}-description`;
     const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
     const liked = photo.likes?.likes?.some((el) => el.user === user?.id) ?? false;
 
@@ -78,7 +81,12 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick}) => {
     };
 
     return (
-        <Card className="photo-card" sx={{height: "100%", display: "flex", flexDirection: "column"}}>
+        <Card
+            className="photo-card"
+            role="article"
+            aria-labelledby={`${countryId} ${descriptionId}`}
+            sx={{height: "100%", display: "flex", flexDirection: "column"}}
+        >
             <Box sx={{position: "relative", overflow: "hidden"}}>
                 <CardMedia
                     component="img"
@@ -89,7 +97,7 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick}) => {
                 <Chip
                     size="small"
                     avatar={<Avatar src={photo.country.flag} alt=""/>}
-                    label={photo.country.name}
+                    label={<span id={countryId}>{photo.country.name}</span>}
                     sx={{
                         position: "absolute",
                         left: 12,
@@ -137,7 +145,7 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick}) => {
                 )}
             </Box>
             <CardContent sx={{flexGrow: 1, display: "flex", flexDirection: "column", gap: 1, pb: "12px !important"}}>
-                <Typography variant="body2" className="photo-card__content" sx={{color: "text.secondary", minHeight: "2.86em"}}>
+                <Typography id={descriptionId} variant="body2" className="photo-card__content" sx={{color: "text.secondary", minHeight: "2.86em"}}>
                     {photo.description}
                 </Typography>
                 <Box sx={{display: "flex", alignItems: "center", mt: "auto"}}>

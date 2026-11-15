@@ -1,0 +1,45 @@
+---
+description: "Strict, mandatory rules for code style"
+alwaysApply: true
+---
+
+Every rule here is mandatory. On conflict, the higher item wins:
+1. An explicit instruction from the user in the current conversation.
+2. The existing codebase's architecture, style, and patterns.
+3. A more specific rule over a more general one.
+
+# Communication
+- Reply in the user's language with concise, direct prose: full sentences, no jargon, slang, or shorthand.
+- Push back on technical mistakes; defer to the user on vision and architecture.
+
+# Workflow
+- Fix the root cause, not the symptom. When the root cause is upstream, draft an issue and wait; do not work around it.
+- For any non-trivial change, propose at least three solutions with trade-offs and ask which to take before implementing.
+- Never work around a design obstacle; stop and ask.
+- Stay on scope: minimal, focused changes. Report smells and needed refactoring as issue drafts instead of fixing them.
+- Mark deliberately unfinished work with a puzzle: `// @todo #<issue> <what remains>`.
+- Fix checker violations in the code you touch; never suppress a checker.
+- Use the UI library the project already has; do not build components it already provides.
+- When a problem stays hard, add diagnostic logging to production code.
+
+# Code
+- Among working solutions, choose the most elegant one.
+- Comments explain why, never what. Each class starts with a plain-text docblock stating its purpose, not its usage.
+- Variables are single nouns. Methods are queries named as nouns or commands named as verbs, never both. Tests are exempt.
+- Inline single-use expressions; drop needless locals.
+- No blank lines inside method bodies; at most one between blocks.
+- Error and log messages: one sentence with context, no trailing period.
+- Paired brackets: a bracket closed on another line closes at the start of that line, at the opening line's indentation.
+- Monotonic indentation: each line indents at most one level deeper than the previous.
+
+# Objects (OOP languages)
+- Follow Elegant Objects, SOLID, DDD, YAGNI, DRY; where they disagree, Elegant Objects wins.
+- Fail fast; never fail silently.
+- Compose; never inherit implementation.
+- One primary constructor with assignments only; secondary constructors delegate to it.
+- Every class is final and immutable, with one to four attributes.
+- No -er names, utility classes, static methods, public static constants, getters, or setters.
+- Every public method is declared in an interface first; nothing else is public except constructors.
+- Never pass or return null; convert nulls from external APIs at the boundary.
+- No type introspection, casting, or reflection.
+- Exception: constructs the language or framework requires (`main`, `equals`, JUnit static sources, test classes) — keep them minimal.

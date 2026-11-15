@@ -29,6 +29,14 @@ dependencies {
     testImplementation "com.microsoft.playwright:playwright:$playwrightVersion"
 
     testImplementation "org.junit.jupiter:junit-jupiter"
+    testImplementation "org.junit.platform:junit-platform-testkit"
+    testImplementation platform("org.springframework.boot:spring-boot-dependencies:4.1.1")
+    testImplementation "org.springframework:spring-jdbc"
+    testImplementation "org.springframework.security:spring-security-crypto"
+    testImplementation "mysql:mysql-connector-java:8.0.33"
+    testImplementation "org.flywaydb:flyway-core:13.7.0"
+    testRuntimeOnly "org.flywaydb:flyway-mysql:13.7.0"
+    testImplementation "com.h2database:h2"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
     testRuntimeOnly "org.aspectj:aspectjrt:$aspectJVersion"
 }
@@ -41,7 +49,71 @@ allure {
     }
 }
 
-test {
-    useJUnitPlatform()
+def commit = providers.exec {
+    commandLine 'git', 'rev-parse', '--short', 'HEAD'
+    workingDir = rootProject.projectDir
+}.standardOutput.asText.map { it.trim() }.get()
+
+processTestResources {
+    from("${rootProject.projectDir}/rfr-auth/src/main/resources/db/migration/rangiffler-auth") {
+        into 'db/migration/rangiffler-auth'
+    }
+    from("${rootProject.projectDir}/rfr-api/src/main/resources/db/migration/rangiffler-api") {
+        into 'db/migration/rangiffler-api'
+    }
+}
+
+tasks.withType(Test).configureEach {
+    outputs.upToDateWhen { false }
+    systemProperty 'rfr.commit', commit
+    System.properties.each { key, value ->
+        if (key.toString().startsWith('rfr.')) {
+            systemProperty key.toString(), value
+        }
+    }
     jvmArgumentProviders.add({ ["-javaagent:${configurations.agent.singleFile}"] } as CommandLineArgumentProvider)
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags 'ui'
+    }
+}
+
+tasks.register('e2e', Test) {
+    group = 'verification'
+    description = 'Runs UI tests after the stand is ready'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'ui'
+    }
+}
+
+tasks.register('installPlaywright', JavaExec) {
+    group = 'verification'
+    description = 'Downloads Playwright Chromium once'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    args 'install', 'chromium'
+}
+
+tasks.register('showTrace', JavaExec) {
+    group = 'verification'
+    description = 'Opens a Playwright trace.zip in Trace Viewer'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    args 'show-trace'
+    def trace = findProperty('trace')
+    if (trace != null) {
+        args trace.toString()
+    }
+}
+
+tasks.register('installPlaywrightWithDeps', JavaExec) {
+    group = 'verification'
+    description = 'Downloads Playwright Chromium and OS libraries'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    args 'install', '--with-deps', 'chromium'
 }

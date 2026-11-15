@@ -1,0 +1,161 @@
+name: CI
+
+on:
+  pull_request:
+  # push: # Триггер на любой пуш в любую ветку
+
+
+jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      auth: ${{ steps.filter.outputs.auth }}
+      api: ${{ steps.filter.outputs.api }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      ci: ${{ steps.filter.outputs.ci }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            auth:
+              - 'rfr-auth/**'
+              - 'build.gradle'
+              - 'settings.gradle'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
+            api:
+              - 'rfr-api/**'
+              - 'build.gradle'
+              - 'settings.gradle'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
+            e2e:
+              - 'rfr-e2e/**'
+              - 'build.gradle'
+              - 'settings.gradle'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
+            frontend:
+              - 'rfr-gql-client/**'
+            ci:
+              - '.github/workflows/ci.yml'
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.auth == 'true' || needs.changes.outputs.api == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+      - name: Build backends
+        env:
+          BUILD_AUTH: ${{ needs.changes.outputs.auth }}
+          BUILD_API: ${{ needs.changes.outputs.api }}
+          BUILD_CI: ${{ needs.changes.outputs.ci }}
+        run: |
+          tasks=()
+          if [ "$BUILD_AUTH" = true ] || [ "$BUILD_CI" = true ]; then tasks+=(":rfr-auth:build"); fi
+          if [ "$BUILD_API" = true ] || [ "$BUILD_CI" = true ]; then tasks+=(":rfr-api:build"); fi
+          ./gradlew --no-daemon "${tasks[@]}" -x test
+
+  e2e:
+    needs: changes
+    if: needs.changes.outputs.auth == 'true' || needs.changes.outputs.api == 'true' || needs.changes.outputs.e2e == 'true' || needs.changes.outputs.frontend == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-24.04
+    services:
+      mysql:
+        image: mysql:8.4.7
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -psecret"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+          --health-start-period=15s
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: rfr-gql-client/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: rfr-gql-client
+      - name: Install Playwright Chromium with OS dependencies
+        run: ./gradlew --no-daemon :rfr-e2e:installPlaywrightWithDeps
+      - name: Start backends
+        run: nohup ./gradlew --no-daemon runAll > /tmp/runAll.log 2>&1 &
+      - name: Start frontend
+        working-directory: rfr-gql-client
+        run: nohup npm run dev > /tmp/vite.log 2>&1 &
+      - name: Wait for stand
+        run: |
+          wait_port() {
+            local port="$1"
+            local deadline=$((SECONDS + 180))
+            while ! (echo >/dev/tcp/localhost/"$port") >/dev/null 2>&1; do
+              if [ "$SECONDS" -ge "$deadline" ]; then
+                echo "Port $port was not open within 180s"
+                echo "=== listeners ==="
+                ss -ltnp || true
+                echo "=== runAll.log ==="
+                cat /tmp/runAll.log || true
+                echo "=== vite.log ==="
+                cat /tmp/vite.log || true
+                exit 1
+              fi
+              sleep 1
+            done
+            echo "Port $port is open"
+          }
+          wait_port 9001
+          wait_port 8081
+          wait_port 3001
+      - name: Run e2e tests
+        run: ./gradlew --no-daemon --project-cache-dir "$RUNNER_TEMP/e2e-gradle" e2e
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: allure-results
+          path: rfr-e2e/build/allure-results
+          if-no-files-found: ignore
+
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: rfr-gql-client
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: rfr-gql-client/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
