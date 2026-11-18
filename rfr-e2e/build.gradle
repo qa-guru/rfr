@@ -27,8 +27,14 @@ dependencies {
     testImplementation "io.qameta.allure:allure-jupiter"
     testImplementation "io.qameta.allure:allure-playwright"
     testImplementation "com.microsoft.playwright:playwright:$playwrightVersion"
+    testImplementation "net.datafaker:datafaker:2.4.4"
+    testImplementation "mysql:mysql-connector-java:8.0.33"
+    testImplementation "org.springframework:spring-jdbc:6.2.11"
+    testImplementation "org.springframework.security:spring-security-crypto:6.5.5"
 
     testImplementation "org.junit.jupiter:junit-jupiter"
+    testImplementation "org.junit.platform:junit-platform-suite"
+    testImplementation "org.junit.platform:junit-platform-testkit"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
     testRuntimeOnly "org.aspectj:aspectjrt:$aspectJVersion"
 }
@@ -41,7 +47,91 @@ allure {
     }
 }
 
-test {
-    useJUnitPlatform()
-    jvmArgumentProviders.add({ ["-javaagent:${configurations.agent.singleFile}"] } as CommandLineArgumentProvider)
+def shortCommit = {
+    try {
+        def proc = new ProcessBuilder('git', 'rev-parse', '--short', 'HEAD')
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        def text = proc.inputStream.text.trim()
+        proc.waitFor()
+        return proc.exitValue() == 0 ? text : ''
+    } catch (Exception ignored) {
+        return ''
+    }
+}()
+
+def configureE2eSuite = { Test task ->
+    task.outputs.upToDateWhen { false }
+    // EngineTestKit fixtures (*Case / *Cases) and @ProbeTarget must not run as suite tests.
+    task.filter {
+        excludeTestsMatching '*Case'
+        excludeTestsMatching '*Cases'
+    }
+    task.useJUnitPlatform {
+        def exclude = ['probe'] as Set
+        def excludeProp = System.getProperty('excludeTags')
+        if (excludeProp) {
+            exclude.addAll(excludeProp.split(',')*.trim().findAll { it })
+        }
+        excludeTags(exclude as String[])
+        def include = System.getProperty('includeTags')
+        if (include) {
+            includeTags(*(include.split(',')*.trim().findAll { it }))
+        }
+    }
+    task.jvmArgumentProviders.add({ ["-javaagent:${configurations.agent.singleFile}"] } as CommandLineArgumentProvider)
+    task.systemProperty 'rfr.frontUrl', System.getProperty('rfr.frontUrl', 'http://localhost:3001')
+    task.systemProperty 'rfr.authUrl', System.getProperty('rfr.authUrl', 'http://localhost:9001')
+    task.systemProperty 'rfr.apiUrl', System.getProperty('rfr.apiUrl', 'http://localhost:8081')
+    task.systemProperty 'rfr.standTimeout', System.getProperty('rfr.standTimeout', '180')
+    task.systemProperty 'rfr.standCheck', System.getProperty('rfr.standCheck', 'true')
+    task.systemProperty 'rfr.schemaCheck', System.getProperty('rfr.schemaCheck', 'true')
+    task.systemProperty 'rfr.commit', System.getProperty('rfr.commit', shortCommit)
+    ['rfr.viewportWidth', 'rfr.viewportHeight'].each { key ->
+        def value = System.getProperty(key)
+        if (value) {
+            task.systemProperty key, value
+        }
+    }
+}
+
+tasks.named('test', Test).configure(configureE2eSuite)
+
+tasks.register('e2e', Test) {
+    group = 'verification'
+    description = 'Run e2e tests (same suite as test; supports --tests)'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+}
+tasks.named('e2e', Test).configure(configureE2eSuite)
+
+tasks.register('showTrace', JavaExec) {
+    group = 'e2e'
+    description = 'Open a Playwright trace.zip in Trace Viewer. Pass -Ptrace=<path>'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    def trace = project.findProperty('trace')
+    doFirst {
+        if (trace == null || trace.toString().isBlank()) {
+            throw new GradleException('showTrace: pass -Ptrace=<path to trace.zip>')
+        }
+    }
+    args 'show-trace', (trace == null ? '' : trace.toString())
+}
+
+tasks.register('installPlaywright', JavaExec) {
+    group = 'e2e'
+    description = 'Install Chromium browser for Playwright'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    args 'install', 'chromium'
+}
+
+tasks.register('installPlaywrightWithDeps', JavaExec) {
+    group = 'e2e'
+    description = 'Install Chromium with OS dependencies'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    args 'install', '--with-deps', 'chromium'
 }
